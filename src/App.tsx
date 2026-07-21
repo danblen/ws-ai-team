@@ -6,7 +6,6 @@ import SessionSidebar from './components/SessionSidebar';
 import AgentManager from './components/AgentManager';
 import ConfigModal from './components/ConfigModal';
 import AuthModal from './components/AuthModal';
-import TodoApp from './todo/TodoApp';
 import { fetchHealth } from './lib/api';
 import { projectDirName } from './lib/storage';
 import { useApp } from './store/AppProvider';
@@ -19,7 +18,6 @@ export default function App() {
   const [configOpen, setConfigOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showTodo, setShowTodo] = useState(false);
 
   useEffect(() => {
     fetchHealth().then(setHealth).catch(() => setHealth(null));
@@ -42,35 +40,27 @@ export default function App() {
     : undefined;
 
   return (
-    <div className={`app ${sidebarOpen ? '' : 'no-sidebar'} ${showTodo ? 'todo-mode' : ''}`}>
+    <div className={`app ${sidebarOpen ? '' : 'no-sidebar'}`}>
       <Header
         health={health}
         agentCount={app.agents.filter((a) => a.enabled).length}
         sidebarOpen={sidebarOpen}
-        showTodo={showTodo}
-        onToggleTodo={() => setShowTodo((v) => !v)}
         onOpenAgents={() => setManagerOpen(true)}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
         onOpenConfig={() => setConfigOpen(true)}
         onOpenAuth={() => setAuthOpen(true)}
       />
-      {showTodo ? (
-        <main className="todo-main">
-          <TodoApp />
-        </main>
-      ) : (
-        <main className="workbench">
-          {sidebarOpen && <SessionSidebar />}
-          <ChatPanel />
-          <WorkspacePanel
-            files={displayFiles}
-            activeTab={app.activeTab}
-            onTabChange={app.setActiveTab}
-            streaming={app.running}
-            projectDir={projectDir}
-          />
-        </main>
-      )}
+      <main className="workbench">
+        {sidebarOpen && <SessionSidebar />}
+        <ChatPanel />
+        <WorkspacePanel
+          files={displayFiles}
+          activeTab={app.activeTab}
+          onTabChange={app.setActiveTab}
+          streaming={app.running}
+          projectDir={projectDir}
+        />
+      </main>
       {managerOpen && <AgentManager onClose={() => setManagerOpen(false)} />}
       {configOpen && (
         <ConfigModal

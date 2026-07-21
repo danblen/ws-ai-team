@@ -10,11 +10,9 @@ interface Props {
   onToggleSidebar: () => void;
   onOpenConfig: () => void;
   onOpenAuth: () => void;
-  showTodo: boolean;
-  onToggleTodo: () => void;
 }
 
-export default function Header({ health, agentCount, sidebarOpen, onOpenAgents, onToggleSidebar, onOpenConfig, onOpenAuth, showTodo, onToggleTodo }: Props) {
+export default function Header({ health, agentCount, sidebarOpen, onOpenAgents, onToggleSidebar, onOpenConfig, onOpenAuth }: Props) {
   const { envConfig, setEnvConfig, authEmail, logout } = useApp();
   const configured = health?.configured;
 
@@ -64,9 +62,6 @@ export default function Header({ health, agentCount, sidebarOpen, onOpenAgents, 
         </button>
         <button className="btn ghost" onClick={onOpenAgents} title="管理智能体团队">
           <span className="team-badge">{agentCount}</span> 智能体团队
-        </button>
-        <button className={`btn ghost ${showTodo ? 'active' : ''}`} onClick={onToggleTodo} title="待办清单">
-          {showTodo ? '✕ 关闭' : '☐ 待办'}
         </button>
         {authEmail ? (
           <button className="btn ghost" onClick={logout} title="点击退出登录">

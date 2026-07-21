@@ -797,17 +797,6 @@ button {
   background-clip: padding-box;
 }
 
-/* ================= Todo mode ================= */
-.app.todo-mode {
-  background: #12141c;
-}
-
-.todo-main {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
-
 /* ---------------- Responsive ---------------- */
 @media (max-width: 980px) {
   .workbench,
