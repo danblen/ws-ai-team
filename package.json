@@ -10,7 +10,7 @@
     "dev:web": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "start": "node server/index.js"
+    "start": "node scripts/start.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
