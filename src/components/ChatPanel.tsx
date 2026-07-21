@@ -54,7 +54,6 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     return (
       <div className="msg user">
         <div className="bubble">{message.content}</div>
-        <div className="avatar you">你</div>
       </div>
     );
   }
