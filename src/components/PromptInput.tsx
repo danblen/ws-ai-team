@@ -80,7 +80,7 @@ export default function PromptInput({ streaming, canIterate, onSubmit, onStop }:
           <button className="btn send" onClick={send} disabled={!value.trim()} title="发送">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
               <path
-                d="M4 12l16-8-6 8 6 8-16-8z"
+                d="M20 12l-16-8 6 8-6 8 16-8z"
                 stroke="currentColor"
                 strokeWidth="1.8"
                 strokeLinejoin="round"
