@@ -18,7 +18,7 @@ const KNOWN_CLIS = [
  * 必须位于应用仓库之外：否则 CLI（如 OpenCode）向上探测项目根时会读到
  * ai-team3 自身源码。放到用户家目录下的 ~/.ai-team/workspaces。
  */
-export const WORKSPACES_DIR = path.join(os.homedir(), '.ai-team', 'workspaces');
+export const WORKSPACES_DIR = path.join(os.homedir(), 'ws', 'ai-team-output');
 fs.mkdirSync(WORKSPACES_DIR, { recursive: true });
 
 /**
@@ -32,12 +32,17 @@ function sanitizeName(name) {
 /**
  * 解析出「本次任务实际工作的项目目录」：
  *   <配置的工作根目录>/<项目名>
+ *   或（未配置工作根目录时）
+ *   ~/ws/ai-team-output/<邮箱>/<项目名>
  * - base 用 path.resolve 处理，确保绝对路径不会被当作相对路径拼接；
- * - 未配置根目录时回退到仓库外的 WORKSPACES_DIR（~/.ai-team/workspaces）；
+ * - 未配置根目录时回退到仓库外的 WORKSPACES_DIR（~/ws/ai-team-output）；
  * - 未提供项目名时用 sid 兜底。
  */
-function resolveProjectDir(reqWorkDir, projectName, sid) {
-  const base = reqWorkDir ? path.resolve(reqWorkDir) : WORKSPACES_DIR;
+function resolveProjectDir(reqWorkDir, projectName, sid, email) {
+  let base = reqWorkDir ? path.resolve(reqWorkDir) : WORKSPACES_DIR;
+  if (!reqWorkDir && email) {
+    base = path.join(WORKSPACES_DIR, sanitizeName(email));
+  }
   const name = sanitizeName(projectName) || sid;
   return path.join(base, name);
 }
@@ -103,7 +108,7 @@ export function mountEnv(app) {
     }
 
     // 在「工作根目录/项目名」子目录中执行，每个会话一个独立项目，避免混入根目录。
-    const workDir = resolveProjectDir(reqWorkDir, projectName, sid);
+    const workDir = resolveProjectDir(reqWorkDir, projectName, sid, req.user?.email);
     fs.mkdirSync(workDir, { recursive: true });
 
     // SSE setup
@@ -171,7 +176,7 @@ export function mountEnv(app) {
     const projectName = req.query.projectName;
     if (!sid) return res.status(400).json({ error: '缺少 ?sid=' });
 
-    const workDir = resolveProjectDir(reqWorkDir, projectName, sid);
+    const workDir = resolveProjectDir(reqWorkDir, projectName, sid, req.user?.email);
     if (!fs.existsSync(workDir)) return res.json({ ok: true, files: [] });
 
     try {

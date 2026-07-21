@@ -44,7 +44,11 @@ app.use('/api', (req, res, next) => {
   if (!authRequired()) return next(); // 无用户且未配置 → 开放访问
   const header = req.headers.authorization || '';
   if (API_TOKEN && header === `Bearer ${API_TOKEN}`) return next();
-  if (authFromRequest(req)) return next();
+  const payload = authFromRequest(req);
+  if (payload) {
+    req.user = payload;
+    return next();
+  }
   res.status(401).json({ error: '未授权 — 请先登录' });
 });
 
