@@ -50,15 +50,20 @@ export default function SessionSidebar() {
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <span
-                  className="session-title"
-                  onDoubleClick={(e) => {
-                    e.stopPropagation();
-                    startRename(s.id, s.title);
-                  }}
-                >
-                  {s.title}
-                </span>
+                <div className="session-info">
+                  {s.projectName && (
+                    <span className="session-project">{s.projectName}</span>
+                  )}
+                  <span
+                    className="session-title"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      startRename(s.id, s.title);
+                    }}
+                  >
+                    {s.title}
+                  </span>
+                </div>
               )}
               <button
                 className="session-del"

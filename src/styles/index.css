@@ -6,8 +6,8 @@
   --border: #dce4f0;
   --border-soft: #e8eff8;
   --text: #1b1f2a;
-  --text-dim: #506080;
-  --text-faint: #8499b8;
+  --text-dim: #3d4f66;
+  --text-faint: #5f748e;
   --accent: #5B9EFF;
   --accent-2: #4EC8E8;
   --accent-grad: linear-gradient(135deg, #5B9EFF 0%, #7CB8FF 50%, #4EC8E8 100%);
@@ -1006,12 +1006,27 @@ button {
   font-size: 12px;
   flex-shrink: 0;
 }
-.session-title {
+.session-info {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.session-project {
+  font-size: 10px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.session-title {
   font-size: 12.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 .session-rename {
   flex: 1;
