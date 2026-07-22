@@ -40,6 +40,12 @@ export default function ProjectPicker() {
   return null; // SSH 等模式不在此处理
 }
 
+// 云端模式下隐藏工作树的绝对路径前缀（含用户家目录与邮箱），仅以 workspace 展示相对部分。
+function maskRemoteWorkDir(workDir: string): string {
+  const m = workDir.match(/\/ai-team-output\/[^/]+\/(.*)$/);
+  return m ? `workspace/${m[1]}` : workDir;
+}
+
 // ---------- 云端：已绑定项目卡片（锁定） ----------
 function RemoteBoundCard() {
   const app = useApp();
@@ -66,7 +72,7 @@ function RemoteBoundCard() {
         <span className="project-bound-name">📦 {s.projectName || s.projectId}</span>
         <span className="project-lock" title="已锁定，本会话不可切换项目">🔒 已锁定</span>
       </div>
-      {s.workDir && <p className="env-hint" title={s.workDir}>工作树：{s.workDir}</p>}
+      {s.workDir && <p className="env-hint" title={maskRemoteWorkDir(s.workDir)}>工作树：{maskRemoteWorkDir(s.workDir)}</p>}
       {error && <p className="env-hint warn">{error}</p>}
       <div className="project-actions">
         {s.merged ? (
