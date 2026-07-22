@@ -12,10 +12,11 @@ export function LogoIcon() {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M12 3L21 12L12 21L3 12Z" />
-      <path d="M12 8L16 12L12 16L8 12Z" strokeDasharray="1 2.5" strokeOpacity="0.6" />
-      <circle cx="12" cy="12" r="2.5" fill="currentColor" fillOpacity="0.15" stroke="none" />
-      <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+      <path d="M12 2.5L21.1 7.8L21.1 18.2L12 23.5L2.9 18.2L2.9 7.8Z" />
+      <path d="M12 6.5L17.5 9.5L17.5 15.5L12 18.5L6.5 15.5L6.5 9.5Z" strokeOpacity="0.3" strokeWidth="1" />
+      <circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" strokeOpacity="0.15" strokeWidth="0.8" />
+      <circle cx="12" cy="13" r="2" fill="currentColor" />
+      <circle cx="12" cy="13" r="0.8" fill="var(--bg)" />
     </svg>
   );
 }
