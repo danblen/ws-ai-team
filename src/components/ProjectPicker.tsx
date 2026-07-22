@@ -4,6 +4,12 @@ import DirBrowserModal from './DirBrowserModal';
 import { listProjects, createProject } from '../lib/api';
 import type { RemoteProject } from '../lib/api';
 
+// 「在服务器上选择工作目录」入口的授权邮箱。该功能可直接改动服务器上的
+// 代码，存在被外部操纵服务器的风险，故临时仅限该管理员账号使用；其余账号
+// 一律不渲染此入口（直接不进入 DOM，而非仅视觉隐藏）。
+// 注意：这只是前端限制，真正的安全边界仍应由后端对相关接口做鉴权。
+const DIR_SELECT_ALLOWED_EMAIL = 'siplgo@siplgo.xyz';
+
 /**
  * 概览区的项目 / 工作目录选择入口。
  * - 远程模式：列出「我的项目」（后端注册表），可新建或选已有项目；选定后为本会话
@@ -179,6 +185,9 @@ function RemotePicker() {
   const [dirName, setDirName] = useState('');
 
   const loggedIn = Boolean(app.authEmail);
+  // 仅授权管理员账号可使用「选择服务器目录」入口（大小写不敏感）。
+  const canSelectDir =
+    (app.authEmail || '').trim().toLowerCase() === DIR_SELECT_ALLOWED_EMAIL;
 
   const refresh = useCallback(() => {
     if (!loggedIn) return;
@@ -299,33 +308,37 @@ function RemotePicker() {
         )}
       </div>
 
-      <div className="project-list-label" style={{ marginTop: 14 }}>
-        或在服务器上选择工作目录
-      </div>
-      <p className="env-hint">
-        在当前应用所在服务器上浏览并选择一个 Git 仓库目录，像本地模式一样为本会话创建工作树（也可在下一步改为直接在当前分支开发）。
-      </p>
-      <div className="project-new">
-        <input
-          className="env-input"
-          placeholder="项目名称（置空则取目录名）"
-          value={dirName}
-          disabled={busy}
-          onChange={(e) => setDirName(e.target.value)}
-        />
-        <button className="btn-primary" onClick={() => setDirOpen(true)} disabled={busy}>
-          {busy ? '处理中…' : '选择目录并使用'}
-        </button>
-      </div>
+      {canSelectDir && (
+        <>
+          <div className="project-list-label" style={{ marginTop: 14 }}>
+            或在服务器上选择工作目录
+          </div>
+          <p className="env-hint">
+            在当前应用所在服务器上浏览并选择一个 Git 仓库目录，像本地模式一样为本会话创建工作树（也可在下一步改为直接在当前分支开发）。
+          </p>
+          <div className="project-new">
+            <input
+              className="env-input"
+              placeholder="项目名称（置空则取目录名）"
+              value={dirName}
+              disabled={busy}
+              onChange={(e) => setDirName(e.target.value)}
+            />
+            <button className="btn-primary" onClick={() => setDirOpen(true)} disabled={busy}>
+              {busy ? '处理中…' : '选择目录并使用'}
+            </button>
+          </div>
 
-      {dirOpen && (
-        <DirBrowserModal
-          onPick={(dir) => {
-            setDirOpen(false);
-            bindDir(dir);
-          }}
-          onClose={() => setDirOpen(false)}
-        />
+          {dirOpen && (
+            <DirBrowserModal
+              onPick={(dir) => {
+                setDirOpen(false);
+                bindDir(dir);
+              }}
+              onClose={() => setDirOpen(false)}
+            />
+          )}
+        </>
       )}
     </section>
   );

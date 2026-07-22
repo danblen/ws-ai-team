@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { WORKSPACES_DIR } from './env.js';
+import { ensureAdminForSensitive } from './auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, '.data');
@@ -277,6 +278,8 @@ export function mountProjects(app) {
   // ---- 本地模式：对任意本地仓库目录创建/合并 worktree 分支 ----
 
   app.post('/api/local-git/checkout', async (req, res) => {
+    // 对任意本地目录建工作树属高危操作，云端仅管理员可用。
+    if (!ensureAdminForSensitive(req, res)) return;
     const dir = String(req.body?.dir || '').trim();
     const sid = safeId(req.body?.sid);
     if (!dir || !sid) return res.status(400).json({ error: '缺少 dir 或 sid' });
@@ -316,6 +319,8 @@ export function mountProjects(app) {
   });
 
   app.post('/api/local-git/merge', async (req, res) => {
+    // 对任意本地目录合并工作树属高危操作，云端仅管理员可用。
+    if (!ensureAdminForSensitive(req, res)) return;
     const dir = String(req.body?.dir || '').trim();
     const sid = safeId(req.body?.sid);
     if (!dir || !sid) return res.status(400).json({ error: '缺少 dir 或 sid' });

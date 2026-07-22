@@ -118,6 +118,29 @@ export function authFromRequest(req) {
   return verifyToken(m[1]);
 }
 
+// ---------- 管理员鉴权 ----------
+// 高危操作（浏览服务器任意目录、对任意目录建/合并工作树、在任意目录跑 CLI）
+// 可直接改动服务器上的代码，仅限管理员账号。默认管理员邮箱可用 ADMIN_EMAIL 覆盖。
+export const ADMIN_EMAIL = normalizeEmail(process.env.ADMIN_EMAIL || 'siplgo@siplgo.xyz');
+
+/** 当前请求是否为管理员（邮箱匹配 ADMIN_EMAIL，大小写不敏感）。 */
+export function isAdmin(req) {
+  return normalizeEmail(req.user?.email) === ADMIN_EMAIL;
+}
+
+/**
+ * 高危操作的鉴权闸门：
+ * - 未启用鉴权（本地无注册用户）→ 完全放行，保证本地模式在自己电脑上照常使用；
+ * - 启用鉴权（云端有注册用户）→ 仅管理员放行，其余账号写出 403 并返回 false。
+ * 返回 true 表示放行；返回 false 时已写出响应，调用方应立即 return。
+ */
+export function ensureAdminForSensitive(req, res) {
+  if (!authRequired()) return true;
+  if (isAdmin(req)) return true;
+  res.status(403).json({ error: '无权限：该操作仅限管理员账号' });
+  return false;
+}
+
 // ---------- 路由 ----------
 export function mountAuth(app) {
   // 注册：邮箱唯一，密码至少 6 位。
