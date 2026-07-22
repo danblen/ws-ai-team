@@ -22,6 +22,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/ai-team/, ''),
       },
+      // 已发布站点公开访问路径，开发时同样转发到后端。
+      '/ai-team/p': {
+        target: `http://localhost:${SERVER_PORT}`,
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/ai-team/, ''),
+      },
     },
   },
 });

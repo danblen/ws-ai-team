@@ -129,6 +129,44 @@ export async function buildFromDir(sid, srcDir) {
   return `/preview/${sid}/`;
 }
 
+/**
+ * Build a project (multi-file React or single HTML) into <destDir>/dist,
+ * writing the source files into destDir first. Used by the publish feature
+ * to produce a persistent, shareable build separate from ephemeral previews.
+ */
+export async function buildForPublish(destDir, files, framework) {
+  resetDir(destDir);
+  writeFiles(destDir, files);
+  const distDir = path.join(destDir, 'dist');
+
+  if (framework === 'html') {
+    fs.mkdirSync(distDir, { recursive: true });
+    const entry = files.find((f) => sanitizeRel(f.path) === 'index.html') || files[0];
+    fs.writeFileSync(path.join(distDir, 'index.html'), String(entry?.content ?? ''), 'utf8');
+    return;
+  }
+
+  // Ensure an entry HTML exists for Vite.
+  const indexPath = path.join(destDir, 'index.html');
+  if (!fs.existsSync(indexPath)) fs.writeFileSync(indexPath, DEFAULT_INDEX_HTML, 'utf8');
+
+  const { build } = await import('vite');
+  const react = (await import('@vitejs/plugin-react')).default;
+
+  await build({
+    root: destDir,
+    base: './',
+    logLevel: 'silent',
+    configFile: false,
+    plugins: [react()],
+    build: {
+      outDir: distDir,
+      emptyOutDir: true,
+      chunkSizeWarningLimit: 4000,
+    },
+  });
+}
+
 /** Register the preview build endpoint and static serving. */
 export function mountPreview(app) {
   app.post('/api/preview/:sid', async (req, res) => {

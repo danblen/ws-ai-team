@@ -206,6 +206,65 @@ export async function buildPreview(
   return url.startsWith('/') ? `${BASE_PREFIX}${url}` : url;
 }
 
+// ---------- Publish (persistent, publicly shareable site) ----------
+
+export interface PublishResult {
+  id: string;
+  /** 完整可分享的绝对地址（含 origin + 基路径 + /p/<id>/）。 */
+  url: string;
+}
+
+/** 目标实例定位：remote 模式下发布到远端实例，使链接对外可访问。 */
+export interface PublishTarget {
+  base?: string;
+  token?: string;
+}
+
+/** 将 base 归一化并拼出该实例下某根相对路径的完整绝对地址。 */
+function absoluteUrl(base: string, rootRelative: string): string {
+  const origin = (base || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/+$/, '');
+  return rootRelative.startsWith('/') ? `${origin}${BASE_PREFIX}${rootRelative}` : rootRelative;
+}
+
+/**
+ * 发布（或重新发布）一个会话的项目，返回可分享的公开地址。
+ * remote 模式下传入 { base, token } 以发布到远端部署实例。
+ */
+export async function publishProject(
+  sid: string,
+  files: ProjectFile[],
+  framework: Framework,
+  title: string,
+  target?: PublishTarget,
+): Promise<PublishResult> {
+  const base = (target?.base || '').replace(/\/+$/, '');
+  const bearer = target?.token || _authToken || _apiToken;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (bearer) headers['Authorization'] = `Bearer ${bearer}`;
+
+  const res = await fetch(`${base}${BASE_PREFIX}/api/publish/${encodeURIComponent(sid)}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ files, framework, title }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.url) throw new Error(data.error || `发布失败 (${res.status})`);
+  return { id: data.id as string, url: absoluteUrl(base, data.url as string) };
+}
+
+/** 查询某会话是否已发布，返回其可分享地址（未发布则 null）。 */
+export async function getPublishInfo(sid: string, target?: PublishTarget): Promise<PublishResult | null> {
+  const base = (target?.base || '').replace(/\/+$/, '');
+  const bearer = target?.token || _authToken || _apiToken;
+  const headers: Record<string, string> = {};
+  if (bearer) headers['Authorization'] = `Bearer ${bearer}`;
+
+  const res = await fetch(`${base}${BASE_PREFIX}/api/publish/${encodeURIComponent(sid)}`, { headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.published || !data.url) return null;
+  return { id: data.id as string, url: absoluteUrl(base, data.url as string) };
+}
+
 export interface StreamHandlers {
   onDelta: (text: string) => void;
   onDone: () => void;
