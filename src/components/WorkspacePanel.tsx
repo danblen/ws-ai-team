@@ -7,6 +7,7 @@ import CloudTab from './tabs/CloudTab';
 import FilesTab from './tabs/FilesTab';
 import TerminalTab from './tabs/TerminalTab';
 import PublishTab from './tabs/PublishTab';
+import AgentManager from './AgentManager';
 
 interface Props {
   files: ProjectFile[];
@@ -24,6 +25,7 @@ const TABS: { id: WorkTab; label: string; icon: string }[] = [
   { id: 'files', label: '文件', icon: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13V3a1 1 0 011-1h4l4 4v7a1 1 0 01-1 1H4a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 2v4h4" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>' },
   { id: 'terminal', label: '终端', icon: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 12l5-4-5-4M9 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>' },
   { id: 'publish', label: '发布', icon: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M4 6l4-4 4 4M2 12v2h12v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>' },
+  { id: 'team', label: '团队', icon: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="5" r="2" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="11" cy="5" r="2" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M1 14v-1a3.5 3.5 0 013.5-3.5h2A3.5 3.5 0 0110 13v1M9 14v-1a3 3 0 013-3h1a3 3 0 013 3v1" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>' },
 ];
 
 export default function WorkspacePanel({ files, activeTab, streaming, projectDir, onTabChange }: Props) {
@@ -52,6 +54,7 @@ export default function WorkspacePanel({ files, activeTab, streaming, projectDir
         {activeTab === 'files' && <FilesTab onOpenInEditor={() => onTabChange('code')} />}
         {activeTab === 'terminal' && <TerminalTab />}
         {activeTab === 'publish' && <PublishTab />}
+        {activeTab === 'team' && <AgentManager />}
       </div>
     </section>
   );

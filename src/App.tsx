@@ -3,7 +3,6 @@ import Header from './components/Header';
 import ChatPanel from './components/ChatPanel';
 import WorkspacePanel from './components/WorkspacePanel';
 import SessionSidebar from './components/SessionSidebar';
-import AgentManager from './components/AgentManager';
 import ConfigModal from './components/ConfigModal';
 import AuthModal from './components/AuthModal';
 import { fetchHealth } from './lib/api';
@@ -14,7 +13,6 @@ import type { HealthInfo } from './lib/types';
 export default function App() {
   const app = useApp();
   const [health, setHealth] = useState<HealthInfo | null>(null);
-  const [managerOpen, setManagerOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -44,15 +42,13 @@ export default function App() {
 
   return (
     <div className={`app ${sidebarOpen ? '' : 'no-sidebar'}`}>
-      <Header
-        health={health}
-        agentCount={app.agents.filter((a) => a.enabled).length}
-        sidebarOpen={sidebarOpen}
-        onOpenAgents={() => setManagerOpen(true)}
-        onToggleSidebar={() => setSidebarOpen((v) => !v)}
-        onOpenConfig={() => setConfigOpen(true)}
-        onOpenAuth={() => setAuthOpen(true)}
-      />
+        <Header
+          health={health}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((v) => !v)}
+          onOpenConfig={() => setConfigOpen(true)}
+          onOpenAuth={() => setAuthOpen(true)}
+        />
       <main className="workbench">
         {sidebarOpen && <SessionSidebar />}
         <ChatPanel />
@@ -64,7 +60,6 @@ export default function App() {
           projectDir={projectDir}
         />
       </main>
-      {managerOpen && <AgentManager onClose={() => setManagerOpen(false)} />}
       {configOpen && (
         <ConfigModal
           health={health}

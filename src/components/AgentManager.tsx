@@ -3,71 +3,54 @@ import { useApp } from '../store/AppProvider';
 import { newAgentTemplate, EMOJI_CHOICES, COLOR_CHOICES } from '../lib/agents';
 import type { AgentRole } from '../lib/types';
 
-interface Props {
-  onClose: () => void;
-}
-
-export default function AgentManager({ onClose }: Props) {
+export default function AgentManager() {
   const app = useApp();
-  const [draft, setDraft] = useState<AgentRole[]>(() => app.agents.map((a) => ({ ...a })));
-  const [selectedId, setSelectedId] = useState<string>(app.agents[0]?.id ?? '');
+  const agents = app.agents;
+  const [selectedId, setSelectedId] = useState<string>(agents[0]?.id ?? '');
 
-  const selected = draft.find((a) => a.id === selectedId) || draft[0];
+  const selected = agents.find((a) => a.id === selectedId) || agents[0];
 
-  const patch = (id: string, changes: Partial<AgentRole>) =>
-    setDraft((prev) => prev.map((a) => (a.id === id ? { ...a, ...changes } : a)));
+  const patch = (id: string, changes: Partial<AgentRole>) => {
+    app.updateAgents(agents.map((a) => (a.id === id ? { ...a, ...changes } : a)));
+  };
 
   const addAgent = () => {
     const a = newAgentTemplate();
-    setDraft((prev) => [...prev, a]);
+    app.updateAgents([...agents, a]);
     setSelectedId(a.id);
   };
 
   const removeAgent = (id: string) => {
-    setDraft((prev) => {
-      const next = prev.filter((a) => a.id !== id);
-      if (id === selectedId && next.length) setSelectedId(next[0].id);
-      return next;
-    });
+    const next = agents.filter((a) => a.id !== id);
+    app.updateAgents(next);
+    if (id === selectedId && next.length) setSelectedId(next[0].id);
   };
 
   const move = (id: string, dir: -1 | 1) => {
-    setDraft((prev) => {
-      const i = prev.findIndex((a) => a.id === id);
-      const j = i + dir;
-      if (i < 0 || j < 0 || j >= prev.length) return prev;
-      const next = [...prev];
-      [next[i], next[j]] = [next[j], next[i]];
-      return next;
-    });
-  };
-
-  const save = () => {
-    app.updateAgents(draft);
-    onClose();
+    const i = agents.findIndex((a) => a.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= agents.length) return;
+    const next = [...agents];
+    [next[i], next[j]] = [next[j], next[i]];
+    app.updateAgents(next);
   };
 
   const reset = () => {
     app.resetAgents();
-    onClose();
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal agents-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-head">
-          <div>
-            <h2>智能体团队</h2>
-            <p className="modal-sub">
-              自定义精简角色，按顺序协作（CrewAI 顺序流程 · AutoGen 编排 · Swarm 轻量角色）。
-            </p>
-          </div>
-          <button className="icon-btn" onClick={onClose}>×</button>
+    <div className="tab-pane">
+      <div className="pane-toolbar">
+        <span className="pane-title">👥 团队</span>
+        <div className="pane-actions">
+          <button className="btn ghost" onClick={reset}>恢复默认团队</button>
         </div>
-
+      </div>
+      <div className="pane-body" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="agents-body">
           <div className="agents-list">
-            {draft.map((a, i) => (
+            {agents.map((a, i) => (
               <div
                 key={a.id}
                 className={`agent-row ${a.id === selectedId ? 'active' : ''} ${a.enabled ? '' : 'off'}`}
@@ -85,7 +68,7 @@ export default function AgentManager({ onClose }: Props) {
                 </div>
                 <div className="agent-row-ctl" onClick={(e) => e.stopPropagation()}>
                   <button className="mini" title="上移" onClick={() => move(a.id, -1)} disabled={i === 0}>↑</button>
-                  <button className="mini" title="下移" onClick={() => move(a.id, 1)} disabled={i === draft.length - 1}>↓</button>
+                  <button className="mini" title="下移" onClick={() => move(a.id, 1)} disabled={i === agents.length - 1}>↓</button>
                   <label className="switch" title="启用/停用">
                     <input
                       type="checkbox"
@@ -160,19 +143,11 @@ export default function AgentManager({ onClose }: Props) {
                 该角色负责产出最终可运行代码（工程师）
               </label>
 
-              <button className="del-agent" onClick={() => removeAgent(selected.id)} disabled={draft.length <= 1}>
+              <button className="del-agent" onClick={() => removeAgent(selected.id)} disabled={agents.length <= 1}>
                 删除该智能体
               </button>
             </div>
           )}
-        </div>
-
-        <div className="modal-foot">
-          <button className="btn ghost" onClick={reset}>恢复默认团队</button>
-          <div className="foot-right">
-            <button className="btn ghost" onClick={onClose}>取消</button>
-            <button className="btn send solid" onClick={save}>保存</button>
-          </div>
         </div>
       </div>
     </div>

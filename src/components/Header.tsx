@@ -4,15 +4,13 @@ import type { HealthInfo } from '../lib/types';
 
 interface Props {
   health: HealthInfo | null;
-  agentCount: number;
   sidebarOpen: boolean;
-  onOpenAgents: () => void;
   onToggleSidebar: () => void;
   onOpenConfig: () => void;
   onOpenAuth: () => void;
 }
 
-export default function Header({ health, agentCount, sidebarOpen, onOpenAgents, onToggleSidebar, onOpenConfig, onOpenAuth }: Props) {
+export default function Header({ health, sidebarOpen, onToggleSidebar, onOpenConfig, onOpenAuth }: Props) {
   const { envConfig, setEnvConfig, authEmail, logout } = useApp();
   const configured = health?.configured;
 
@@ -62,9 +60,6 @@ export default function Header({ health, agentCount, sidebarOpen, onOpenAgents, 
               ? `已连接 · ${health.model}`
               : '未配置 API Key'
             : '后端未连接'}
-        </button>
-        <button className="btn ghost" onClick={onOpenAgents} title="管理智能体团队">
-          <span className="team-badge">{agentCount}</span> 智能体团队
         </button>
         {authEmail ? (
           <button className="btn ghost" onClick={logout} title="点击退出登录">

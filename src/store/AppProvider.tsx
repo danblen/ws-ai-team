@@ -51,7 +51,7 @@ import {
   clearAuthToken,
 } from '../lib/api';
 
-export type WorkTab = 'overview' | 'preview' | 'code' | 'cloud' | 'files' | 'terminal' | 'publish';
+export type WorkTab = 'overview' | 'preview' | 'code' | 'cloud' | 'files' | 'terminal' | 'publish' | 'team';
 
 /** Per-session run state so multiple sessions can run concurrently. */
 interface RunState {
