@@ -5,6 +5,7 @@ import os from 'node:os';
 import { runCLI, scanWorkspace } from './cli.js';
 import { buildFromDir } from './preview.js';
 import { runSSHAndSync, testSSH } from './ssh.js';
+import { ensureAdminForSensitive } from './auth.js';
 
 // 本机可被探测到的 CLI Agent 清单。
 const KNOWN_CLIS = [
@@ -47,6 +48,16 @@ function resolveProjectDir(reqWorkDir, projectName, sid, email, direct) {
   }
   const name = sanitizeName(projectName) || sid;
   return path.join(base, name);
+}
+
+/**
+ * 判断 child 是否位于 parent 目录内（含 parent 本身）。
+ * 用于区分「受管理的工作区（WORKSPACES_DIR 下，注册项目/默认工作区，所有
+ * 登录用户可用）」与「任意外部目录（高危，仅管理员可用）」。
+ */
+function isWithin(parent, child) {
+  const rel = path.relative(parent, child);
+  return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
 }
 
 function which(bin) {
@@ -111,6 +122,8 @@ export function mountEnv(app) {
 
     // 在「工作根目录/项目名」子目录中执行；若 direct 则直接以选定目录为项目根。
     const workDir = resolveProjectDir(reqWorkDir, projectName, sid, req.user?.email, direct);
+    // 工作目录走出受管理的 WORKSPACES_DIR（即任意外部目录）时，云端仅管理员可在其中跑 CLI。
+    if (!isWithin(WORKSPACES_DIR, workDir) && !ensureAdminForSensitive(req, res)) return;
     fs.mkdirSync(workDir, { recursive: true });
 
     // SSE setup
@@ -180,6 +193,8 @@ export function mountEnv(app) {
     if (!sid) return res.status(400).json({ error: '缺少 ?sid=' });
 
     const workDir = resolveProjectDir(reqWorkDir, projectName, sid, req.user?.email, direct);
+    // 读取任意外部目录同属高危，云端仅管理员可读。
+    if (!isWithin(WORKSPACES_DIR, workDir) && !ensureAdminForSensitive(req, res)) return;
     if (!fs.existsSync(workDir)) return res.json({ ok: true, files: [] });
 
     try {
@@ -193,6 +208,8 @@ export function mountEnv(app) {
   // ------ Browse local directories (for the per-session workspace picker) ------
 
   app.get('/api/env/local/dirs', (req, res) => {
+    // 浏览服务器任意目录属高危操作，云端仅管理员可用。
+    if (!ensureAdminForSensitive(req, res)) return;
     const raw = typeof req.query.path === 'string' ? req.query.path.trim() : '';
     const dir = raw ? path.resolve(raw) : os.homedir();
     let entries;

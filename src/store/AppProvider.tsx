@@ -554,11 +554,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       const session = sessions.find((s) => s.id === sid);
 
-      // 本地模式：会话开始时若尚未切出工作树（workDir 仍等于项目主干），
+      // 本地/远程模式：会话开始时若尚未切出工作树（workDir 仍等于项目主干），
       // 先从主干切出一份 Git 工作树再开发；完成后带着新 workDir 重新发起。
+      // 远程模式下 checkoutLocalProject 会在应用所在服务器上切出工作树。
       if (
         !forcedWorkDir &&
-        envConfig.mode === 'local' &&
+        (envConfig.mode === 'local' || envConfig.mode === 'remote') &&
         session?.projectRoot &&
         session.localDevMode !== 'direct' &&
         (!session.workDir || session.workDir === session.projectRoot)
@@ -602,9 +603,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // 本地模式下优先使用刚切出的工作树目录（forcedWorkDir）。
       const sessionWorkDir = forcedWorkDir || session?.workDir || '';
 
-      // 远程模式必须先在概览选择或新建项目（绑定 worktree 后才有 workDir）。
-      if (envConfig.mode === 'remote' && envConfig.remote.url && (!sessionWorkDir || !session?.projectId)) {
-        setRun(sid, { error: '请先在概览选择或新建项目' });
+      // 远程模式必须先在概览选择/新建项目，或选择服务器上的工作目录（绑定后才有 workDir）。
+      if (
+        envConfig.mode === 'remote' &&
+        envConfig.remote.url &&
+        (!sessionWorkDir || (!session?.projectId && !session?.projectRoot))
+      ) {
+        setRun(sid, { error: '请先在概览选择项目或工作目录' });
         return;
       }
 
