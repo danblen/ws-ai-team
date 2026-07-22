@@ -15,10 +15,15 @@ export default function ProjectPicker() {
   const s = app.current;
   const mode = app.envConfig.mode;
 
-  // 已绑定项目（远程）或已选目录（本地）→ 展示锁定 / 当前项目卡片。
+  // 已绑定远程注册表项目 → 远程锁定卡片。
   if (mode === 'remote' && s.projectId) {
     return <RemoteBoundCard />;
   }
+  // 以「目录」方式绑定（本地模式，或远程模式选服务器目录）→ 工作树 / 直接开发卡片。
+  if (s.projectRoot) {
+    return <LocalBoundCard />;
+  }
+  // 兼容本地模式旧的直接选目录（仅 workDir）。
   if (mode === 'local' && s.workDir) {
     return <LocalBoundCard />;
   }
@@ -170,6 +175,8 @@ function RemotePicker() {
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [dirOpen, setDirOpen] = useState(false);
+  const [dirName, setDirName] = useState('');
 
   const loggedIn = Boolean(app.authEmail);
 
@@ -217,6 +224,24 @@ function RemotePicker() {
       setBusy(false);
     }
   }, [app, name, s.id]);
+
+  // 选择服务器上的一个目录作为工作目录（复用本地模式的绑定逻辑：
+  // 记入项目、载入文件，Git 工作树在首次发送时切出，也可改为直接开发）。
+  const bindDir = useCallback(
+    async (dir: string) => {
+      setBusy(true);
+      setError(null);
+      try {
+        await app.bindLocalProject(s.id, dirName, dir);
+        setDirName('');
+      } catch (e) {
+        setError((e as Error).message || '选择目录失败');
+      } finally {
+        setBusy(false);
+      }
+    },
+    [app, dirName, s.id],
+  );
 
   if (!loggedIn) {
     return (
@@ -273,6 +298,35 @@ function RemotePicker() {
           ))
         )}
       </div>
+
+      <div className="project-list-label" style={{ marginTop: 14 }}>
+        或在服务器上选择工作目录
+      </div>
+      <p className="env-hint">
+        在当前应用所在服务器上浏览并选择一个 Git 仓库目录，像本地模式一样为本会话创建工作树（也可在下一步改为直接在当前分支开发）。
+      </p>
+      <div className="project-new">
+        <input
+          className="env-input"
+          placeholder="项目名称（置空则取目录名）"
+          value={dirName}
+          disabled={busy}
+          onChange={(e) => setDirName(e.target.value)}
+        />
+        <button className="btn-primary" onClick={() => setDirOpen(true)} disabled={busy}>
+          {busy ? '处理中…' : '选择目录并使用'}
+        </button>
+      </div>
+
+      {dirOpen && (
+        <DirBrowserModal
+          onPick={(dir) => {
+            setDirOpen(false);
+            bindDir(dir);
+          }}
+          onClose={() => setDirOpen(false)}
+        />
+      )}
     </section>
   );
 }
