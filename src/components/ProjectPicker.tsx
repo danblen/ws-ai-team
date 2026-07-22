@@ -270,12 +270,12 @@ function RemotePicker() {
   return (
     <section className="ov-card project-card project-picker">
       <h3>选择项目</h3>
-      <p className="env-hint">选择你已有的项目继续开发（将为本会话创建 Git 工作树分支），或新建一个项目。</p>
+      <p className="env-hint">选择已有项目继续开发，或新建项目。</p>
 
       <div className="project-new">
         <input
           className="env-input"
-          placeholder="新项目名称"
+          placeholder="项目名称"
           value={name}
           disabled={busy}
           onChange={(e) => setName(e.target.value)}
@@ -287,7 +287,7 @@ function RemotePicker() {
           }}
         />
         <button className="btn-primary" onClick={create} disabled={busy || !name.trim()}>
-          新建并使用
+          新建
         </button>
       </div>
 
@@ -308,7 +308,7 @@ function RemotePicker() {
             >
               <span className="project-item-ico">📦</span>
               <span className="project-item-name">{p.name}</span>
-              <span className="project-item-meta">继续开发 →</span>
+              <span className="project-item-meta">开发 →</span>
             </button>
           ))
         )}
@@ -383,7 +383,7 @@ function LocalPicker() {
   return (
     <section className="ov-card project-card project-picker">
       <h3>选择项目</h3>
-      <p className="env-hint">为项目起个名字并选择一个本地 Git 仓库目录开始开发（将为本会话创建独立工作树，可合并回主干），或从历史项目直接进入。</p>
+      <p className="env-hint">选择本地 Git 仓库目录开始开发，或从历史项目进入。</p>
 
       <div className="project-new">
         <input
