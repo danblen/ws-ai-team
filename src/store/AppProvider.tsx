@@ -37,6 +37,7 @@ import { createEnvironment } from '../lib/env';
 import { runCrew, parseEngineerOutput } from '../lib/orchestrator';
 import type { RunMode } from '../lib/orchestrator';
 import {
+  BASE_PREFIX,
   buildPreview,
   setApiConfig,
   clearApiConfig,
@@ -397,7 +398,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
                       // 文件已由 CLI 直接写入 <工作根目录>/<项目名> 磁盘目录，无需重复写入。
 
                       if (previewUrl) {
-                        patchCurrent(sid, (s) => ({ ...s, previewUrl }));
+                        const fullUrl = previewUrl.startsWith('/')
+                          ? `${BASE_PREFIX}${previewUrl}`
+                          : previewUrl;
+                        patchCurrent(sid, (s) => ({ ...s, previewUrl: fullUrl }));
                         appendLog(sid, 'ok', `✔ 预览已就绪`);
                         if (sid === currentIdRef.current) setActiveTab('preview');
                       }
@@ -590,7 +594,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
                       appendLog(sid, 'ok', `✔ SSH 生成 ${files.length} 个文件`);
 
                       if (previewUrl) {
-                        patchCurrent(sid, (s) => ({ ...s, previewUrl }));
+                        const fullUrl = previewUrl.startsWith('/')
+                          ? `${BASE_PREFIX}${previewUrl}`
+                          : previewUrl;
+                        patchCurrent(sid, (s) => ({ ...s, previewUrl: fullUrl }));
                         appendLog(sid, 'ok', `✔ 预览已就绪`);
                         if (sid === currentIdRef.current) setActiveTab('preview');
                       }
