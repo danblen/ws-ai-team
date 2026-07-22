@@ -1,8 +1,8 @@
 :root {
-  --bg: #ffffff;
-  --bg-elev: #ffffff;
-  --bg-elev-2: #f5f6f8;
-  --panel: #ffffff;
+  --bg: #fdfcfc;
+  --bg-elev: #fdfcfc;
+  --bg-elev-2: #f2f2f6;
+  --panel: #fdfcfc;
   --border: #dce4f0;
   --border-soft: #e8eff8;
   --text: #1b1f2a;
@@ -58,7 +58,7 @@ button {
   height: 56px;
   padding: 0 18px;
   border-bottom: 1px solid var(--border);
-  background: #ffffff;
+  background: var(--bg);
   flex-shrink: 0;
 }
 
