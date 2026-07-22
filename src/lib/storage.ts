@@ -50,7 +50,7 @@ function write(key: string, value: unknown) {
   }
 }
 
-export function createSession(): Session {
+export function createSession(seed?: EnvironmentConfig): Session {
   const now = Date.now();
   return {
     id: uid('sess'),
@@ -62,6 +62,8 @@ export function createSession(): Session {
     files: [],
     framework: 'react',
     logs: [],
+    // 新会话继承当前默认模式模板（深拷贝），缺省用内置默认。
+    envConfig: seed ? JSON.parse(JSON.stringify(seed)) : defaultEnvConfig(),
   };
 }
 

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { WorkTab } from '../store/AppProvider';
 import type { ProjectFile } from '../lib/types';
 import OverviewTab from './tabs/OverviewTab';
@@ -28,7 +29,7 @@ const TABS: { id: WorkTab; label: string; icon: string }[] = [
   { id: 'publish', label: '发布', icon: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M4 6l4-4 4 4M2 12v2h12v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>' },
 ];
 
-export default function WorkspacePanel({ files, activeTab, streaming, projectDir, onTabChange }: Props) {
+function WorkspacePanel({ files, activeTab, streaming, projectDir, onTabChange }: Props) {
   return (
     <section className="workspace">
       <div className="workspace-bar">
@@ -59,3 +60,6 @@ export default function WorkspacePanel({ files, activeTab, streaming, projectDir
     </section>
   );
 }
+
+// 侧栏切换时传入的 props 引用不变，memo 避免重渲染重型的预览/代码面板，消除卡顿。
+export default memo(WorkspacePanel);

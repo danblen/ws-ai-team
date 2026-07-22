@@ -1,3 +1,5 @@
+import type { EnvironmentConfig } from './env/types';
+
 export type Role = 'user' | 'assistant';
 
 /** A lightweight, user-customizable agent role (CrewAI-style). */
@@ -71,6 +73,8 @@ export interface Session {
   localDevMode?: 'worktree' | 'direct';
   /** 会话分支是否已合并到主干。 */
   merged?: boolean;
+  /** 本会话绑定的执行环境模式配置（本地/SSH/云端）。缺省时回退到全局默认。 */
+  envConfig?: EnvironmentConfig;
 }
 
 export type LogLevel = 'info' | 'agent' | 'ok' | 'error' | 'cmd';

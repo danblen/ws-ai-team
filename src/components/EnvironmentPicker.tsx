@@ -6,6 +6,8 @@ import EnvironmentConfigModal from './EnvironmentConfigModal';
 interface Props {
   config: EnvironmentConfig;
   onChange: (config: EnvironmentConfig) => void;
+  /** 锁定态：会话已开始后不允许切换模式。 */
+  disabled?: boolean;
 }
 
 /** 简洁线性电脑图标（本地模式）。 */
@@ -16,9 +18,17 @@ const LocalIcon = (
   </svg>
 );
 
+/** 简洁线性锁图标（SSH 模式）。 */
+const SSHIcon = (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="10" width="16" height="11" rx="2" />
+    <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+  </svg>
+);
+
 const MODE_META: Record<EnvironmentConfig['mode'], { icon: ReactNode; label: string }> = {
   local: { icon: LocalIcon, label: '本地' },
-  ssh: { icon: '🔒', label: 'SSH' },
+  ssh: { icon: SSHIcon, label: 'SSH' },
   remote: { icon: '☁️', label: '云端' },
 };
 
@@ -42,30 +52,38 @@ function safeUrl(url: string): string {
   }
 }
 
-export default function EnvironmentPicker({ config, onChange }: Props) {
+export default function EnvironmentPicker({ config, onChange, disabled }: Props) {
   const [open, setOpen] = useState(false);
   const meta = MODE_META[config.mode];
 
   return (
     <>
       <button
-        className="env-picker"
+        className={`env-picker${disabled ? ' is-locked' : ''}`}
         type="button"
-        title="切换执行环境（本地 / SSH / 云端）"
-        onClick={() => setOpen(true)}
+        title={disabled ? '会话已开始，模式已锁定' : '切换执行环境（本地 / SSH / 云端）'}
+        onClick={() => {
+          if (!disabled) setOpen(true);
+        }}
       >
         <span className="env-picker-icon">{meta.icon}</span>
         <span className="env-picker-text">
           <span className="env-picker-mode">{meta.label}</span>
           <span className="env-picker-summary">{summary(config)}</span>
         </span>
+        {disabled && <span className="env-picker-lock" aria-hidden="true">🔒</span>}
       </button>
 
-      {open && (
+      {open && !disabled && (
         <EnvironmentConfigModal config={config} onSave={onChange} onClose={() => setOpen(false)} />
       )}
     </>
   );
+}
+
+/** 模式对应的图标（供侧栏会话项徽标复用）。 */
+export function modeIcon(mode: EnvironmentConfig['mode']): ReactNode {
+  return MODE_META[mode].icon;
 }
 
 // 命名导出便于测试

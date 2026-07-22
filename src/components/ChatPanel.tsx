@@ -1,18 +1,21 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useRef } from 'react';
 import type { ChatMessage, LiveTurn } from '../lib/types';
 import type { RunMode } from '../lib/orchestrator';
 import { parseEngineerOutput } from '../lib/orchestrator';
 import { EXAMPLES } from '../data/examples';
 import PromptInput from './PromptInput';
+import EnvironmentPicker from './EnvironmentPicker';
 import { LogoIcon } from './LogoIcon';
 import { useApp } from '../store/AppProvider';
 
-export default function ChatPanel() {
+function ChatPanel() {
   const app = useApp();
   const scrollRef = useRef<HTMLDivElement>(null);
   const messages = app.current.messages;
   const isEmpty = messages.length === 0 && !app.running;
   const busy = app.running || app.building;
+  // 会话开始后锁定模式（已发消息 / 运行中 / 已绑定项目）。
+  const modeLocked = busy || messages.length > 0 || Boolean(app.current.projectLocked);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -30,6 +33,9 @@ export default function ChatPanel() {
 
   return (
     <section className="chat">
+      <div className="chat-topbar">
+        <EnvironmentPicker config={app.envConfig} onChange={app.setEnvConfig} disabled={modeLocked} />
+      </div>
       <div className="chat-scroll" ref={scrollRef}>
         {isEmpty ? (
           <EmptyState onPick={app.send} />
@@ -181,3 +187,7 @@ function EmptyState({ onPick }: { onPick: (p: string) => void }) {
     </div>
   );
 }
+
+// 侧栏展开/收起只改变 App 的 sidebarOpen（不在 Provider 里），
+// ChatPanel 无 props，memo 后不会因父组件重渲染而重渲染，避免切换卡顿。
+export default memo(ChatPanel);

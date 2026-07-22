@@ -221,14 +221,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (currentId && !IS_EMBEDDED) saveCurrentId(currentId);
   }, [currentId]);
 
-  // Remote mode: redirect all /api/* calls to the remote instance.
+  // 云端模式：把所有 /api/* 请求重定向到当前会话绑定的云端实例。
   useEffect(() => {
-    if (envConfig.mode === 'remote' && envConfig.remote.url) {
-      setApiConfig(envConfig.remote.url, envConfig.remote.token || getAuthToken());
+    const active = current?.envConfig || envConfig;
+    if (active.mode === 'remote' && active.remote.url) {
+      setApiConfig(active.remote.url, active.remote.token || getAuthToken());
     } else {
       clearApiConfig();
     }
-  }, [envConfig]);
+  }, [current, envConfig]);
 
   // 启动时校验已持久化的会话令牌，恢复登录态（打到当前站点）。
   useEffect(() => {
@@ -290,11 +291,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const newSession = useCallback(() => {
-    const s = createSession();
+    const s = createSession(envConfig);
     setSessions((prev) => [s, ...prev]);
     setCurrentId(s.id);
     setActiveTab('overview');
-  }, []);
+  }, [envConfig]);
 
   const switchSession = useCallback((id: string) => {
     setCurrentId(id);
@@ -324,7 +325,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateAgents = useCallback((next: AgentRole[]) => setAgents(next), []);
   const resetAgents = useCallback(() => setAgents(DEFAULT_AGENTS.map((a) => ({ ...a }))), []);
-  const setEnvConfig = useCallback((config: EnvironmentConfig) => setEnvConfigState(config), []);
+  const setEnvConfig = useCallback(
+    (config: EnvironmentConfig) => {
+      const sid = currentIdRef.current;
+      // 写入当前会话的模式配置，同时更新默认模板供后续新会话继承。
+      if (sid) patchCurrent(sid, (s) => ({ ...s, envConfig: config, updatedAt: Date.now() }));
+      setEnvConfigState(config);
+    },
+    [patchCurrent],
+  );
 
   const setSessionWorkDir = useCallback(
     (id: string, dir: string | null) => {
@@ -553,13 +562,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (runs[sid]?.running && !forcedWorkDir) return;
 
       const session = sessions.find((s) => s.id === sid);
+      // 本会话的生效环境配置（缺省回退到全局默认模板）。
+      const cfg = session?.envConfig || envConfig;
 
       // 本地/云端模式：会话开始时若尚未切出工作树（workDir 仍等于项目主干），
       // 先从主干切出一份 Git 工作树再开发；完成后带着新 workDir 重新发起。
       // 云端模式下 checkoutLocalProject 会在应用所在服务器上切出工作树。
       if (
         !forcedWorkDir &&
-        (envConfig.mode === 'local' || envConfig.mode === 'remote') &&
+        (cfg.mode === 'local' || cfg.mode === 'remote') &&
         session?.projectRoot &&
         session.localDevMode !== 'direct' &&
         (!session.workDir || session.workDir === session.projectRoot)
@@ -605,8 +616,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       // 云端模式必须先在概览选择/新建项目，或选择服务器上的工作目录（绑定后才有 workDir）。
       if (
-        envConfig.mode === 'remote' &&
-        envConfig.remote.url &&
+        cfg.mode === 'remote' &&
+        cfg.remote.url &&
         (!sessionWorkDir || (!session?.projectId && !session?.projectRoot))
       ) {
         setRun(sid, { error: '请先在概览选择项目或工作目录' });
@@ -626,7 +637,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       codeAgentRefs.current[sid] = false;
 
       // ── CLI mode: bypass runCrew, delegate to local CLI Agent ──
-      if (envConfig.mode === 'local' && envConfig.local.engine === 'cli') {
+      if (cfg.mode === 'local' && cfg.local.engine === 'cli') {
         const cliAgent: AgentRole = {
           id: 'cli-runner',
           name: 'CLI Agent',
@@ -641,11 +652,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setRun(sid, { live: { agent: cliAgent, content: '', phase: 'thinking' }, liveFiles: [] });
         appendLog(sid, 'agent', `⚡ CLI Agent 开始工作…`);
 
-        const env = createEnvironment(envConfig, sid, projectName, sessionWorkDir || undefined);
+        const env = createEnvironment(cfg, sid, projectName, sessionWorkDir || undefined);
         if (env) {
           (async () => {
             try {
-              for await (const event of env.run(goal, envConfig.local.cliId, controller.signal)) {
+              for await (const event of env.run(goal, cfg.local.cliId, controller.signal)) {
                 switch (event.type) {
                   case 'delta': {
                     const c = (liveContentRefs.current[sid] || '') + event.text;
@@ -727,12 +738,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       // ── Remote mode: run CLI on the deployed remote server (e.g. siplgo.xyz) ──
-      if (envConfig.mode === 'remote' && envConfig.remote.url) {
+      if (cfg.mode === 'remote' && cfg.remote.url) {
         const host = (() => {
           try {
-            return new URL(envConfig.remote.url).host;
+            return new URL(cfg.remote.url).host;
           } catch {
-            return envConfig.remote.url;
+            return cfg.remote.url;
           }
         })();
         const remoteAgent: AgentRole = {
@@ -749,11 +760,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setRun(sid, { live: { agent: remoteAgent, content: '', phase: 'thinking' }, liveFiles: [] });
         appendLog(sid, 'agent', `☁️ 云端 Agent (${host}) 开始在服务器上工作…`);
 
-        const env = createEnvironment(envConfig, sid, projectName, sessionWorkDir || undefined);
+        const env = createEnvironment(cfg, sid, projectName, sessionWorkDir || undefined);
         if (env) {
           (async () => {
             try {
-              for await (const event of env.run(goal, envConfig.remote.cliId, controller.signal)) {
+              for await (const event of env.run(goal, cfg.remote.cliId, controller.signal)) {
                 switch (event.type) {
                   case 'delta': {
                     const c = (liveContentRefs.current[sid] || '') + event.text;
@@ -829,10 +840,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       // ── SSH mode: run CLI on remote host ──
-      if (envConfig.mode === 'ssh' && envConfig.ssh.host) {
+      if (cfg.mode === 'ssh' && cfg.ssh.host) {
         const sshAgent: AgentRole = {
           id: 'ssh-runner',
-          name: `SSH · ${envConfig.ssh.host}`,
+          name: `SSH · ${cfg.ssh.host}`,
           emoji: '🔒',
           color: '#8b5cf6',
           goal: '',
@@ -842,13 +853,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
 
         setRun(sid, { live: { agent: sshAgent, content: '', phase: 'thinking' }, liveFiles: [] });
-        appendLog(sid, 'agent', `🔒 SSH Agent (${envConfig.ssh.host}) 开始工作…`);
+        appendLog(sid, 'agent', `🔒 SSH Agent (${cfg.ssh.host}) 开始工作…`);
 
-        const env = createEnvironment(envConfig, sid, projectName);
+        const env = createEnvironment(cfg, sid, projectName);
         if (env) {
           (async () => {
             try {
-              for await (const event of env.run(goal, envConfig.ssh.cliId, controller.signal)) {
+              for await (const event of env.run(goal, cfg.ssh.cliId, controller.signal)) {
                 switch (event.type) {
                   case 'delta': {
                     const c = (liveContentRefs.current[sid] || '') + event.text;
@@ -874,7 +885,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                       kind: 'agent',
                       content: liveContentRefs.current[sid] || 'SSH 执行完成',
                       agentId: 'ssh-runner',
-                      agentName: `SSH · ${envConfig.ssh.host}`,
+                      agentName: `SSH · ${cfg.ssh.host}`,
                       emoji: '🔒',
                       color: '#8b5cf6',
                       hasCode: files.length > 0,
@@ -984,8 +995,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               // 会话选定目录时直接写入该目录，否则写入 <工作根目录>/<项目名>。
               const projectDir = sessionWorkDir
                 ? sessionWorkDir
-                : envConfig.local.workDir
-                  ? `${envConfig.local.workDir}/${projectName}`
+                : cfg.local.workDir
+                  ? `${cfg.local.workDir}/${projectName}`
                   : null;
               if (projectDir) {
                 writeProjectFiles(parsed.files, projectDir).catch(() => {});
@@ -1059,7 +1070,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     sessions,
     current,
     agents,
-    envConfig,
+    envConfig: current?.envConfig || envConfig,
     live: run.live,
     liveFiles: run.liveFiles,
     running: run.running,
