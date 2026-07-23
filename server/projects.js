@@ -253,6 +253,11 @@ export function mountProjects(app) {
     const branch = branchName(sid);
 
     try {
+      // 提取主干最新变更（若有远端则同步，无远端则跳过）。
+      try {
+        await git(dir, ['pull', '--no-rebase']);
+      } catch { /* 无远端或拉取失败则忽略 */ }
+
       // 提交 worktree 内的改动（若无改动用空提交兜底以推进合并）。
       if (fs.existsSync(wtDir)) {
         await git(wtDir, ['add', '-A']);
@@ -265,6 +270,11 @@ export function mountProjects(app) {
 
       // 合并会话分支到主干。
       await git(dir, [...GIT_IDENTITY, 'merge', '--no-ff', '-m', `merge session ${sid}`, branch]);
+
+      // 推送合并结果到远端（若有远端则推送，无远端则跳过）。
+      try {
+        await git(dir, ['push']);
+      } catch { /* 无远端或推送失败则忽略 */ }
 
       // 移除 worktree。
       try {
@@ -336,6 +346,11 @@ export function mountProjects(app) {
     const branch = branchName(sid);
 
     try {
+      // 提取主干最新变更（若有远端则同步，无远端则跳过）。
+      try {
+        await git(repoDir, ['pull', '--no-rebase']);
+      } catch { /* 无远端或拉取失败则忽略 */ }
+
       // 提交 worktree 内的改动（无改动则忽略）。
       if (fs.existsSync(wtDir)) {
         await git(wtDir, ['add', '-A']);
@@ -346,6 +361,11 @@ export function mountProjects(app) {
 
       // 合并会话分支到主干（当前主仓库所在分支）。
       await git(repoDir, [...GIT_IDENTITY, 'merge', '--no-ff', '-m', `merge session ${sid}`, branch]);
+
+      // 推送合并结果到远端（若有远端则推送，无远端则跳过）。
+      try {
+        await git(repoDir, ['push']);
+      } catch { /* 无远端或推送失败则忽略 */ }
 
       // 移除 worktree。
       try {
