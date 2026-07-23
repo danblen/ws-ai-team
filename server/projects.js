@@ -162,8 +162,14 @@ export function mountProjects(app) {
 
   app.post('/api/projects', async (req, res) => {
     const owner = ownerKey(req);
-    const name = String(req.body?.name || '').trim();
-    if (!name) return res.status(400).json({ error: '缺少项目名称' });
+    // 允许不填项目名：置空时自动生成一个带时间戳的默认名，便于在项目列表中区分。
+    const rawName = String(req.body?.name || '').trim();
+    let name = rawName;
+    if (!name) {
+      const d = new Date();
+      const ts = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      name = `未命名项目 ${ts}`;
+    }
 
     const reg = readRegistry();
     const id = genId(name);

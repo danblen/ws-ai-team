@@ -232,8 +232,8 @@ function RemotePicker() {
   );
 
   const create = useCallback(async () => {
+    // 允许不填项目名：置空时后端自动生成默认名，直接开始会话。
     const n = name.trim();
-    if (!n) return;
     setBusy(true);
     setError(null);
     try {
@@ -283,7 +283,7 @@ function RemotePicker() {
       <div className="project-new">
         <input
           className="env-input"
-          placeholder="新项目名称"
+          placeholder="项目名称（可选，留空自动命名）"
           value={name}
           disabled={busy}
           onChange={(e) => setName(e.target.value)}
@@ -294,8 +294,8 @@ function RemotePicker() {
             }
           }}
         />
-        <button className="btn-primary" onClick={create} disabled={busy || !name.trim()}>
-          新建并使用
+        <button className="btn-primary" onClick={create} disabled={busy}>
+          {busy ? '创建中…' : '新建并使用'}
         </button>
       </div>
 
