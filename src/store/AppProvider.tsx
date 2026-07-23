@@ -43,6 +43,7 @@ import type { RunMode } from '../lib/orchestrator';
 import {
   BASE_PREFIX,
   buildPreview,
+  buildPreviewFromDir,
   setApiConfig,
   clearApiConfig,
   writeProjectFiles,
@@ -548,18 +549,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   // 依据当前会话的代码立即构建预览（可在对话未结束时手动触发）。
+  // 远程模式下文件已在服务器磁盘上，直接让服务器构建，无需前端传文件。
   const previewNow = useCallback(async () => {
     const sid = currentIdRef.current;
     const session = sessions.find((s) => s.id === sid);
     if (!session) return;
+    if (runs[sid]?.building) return;
+
+    // 远程模式：文件已在服务器上，通过 workDir 构建。
+    const mode = session.envConfig?.mode || envConfig.mode;
+    const workDir = session.workDir;
+    if (workDir && mode === 'remote') {
+      appendLog(sid, 'cmd', `vite build · 服务器工作目录`);
+      setRun(sid, { building: true });
+      try {
+        const url = await buildPreviewFromDir(sid, workDir);
+        patchCurrent(sid, (s) => ({ ...s, previewUrl: url, updatedAt: Date.now() }));
+        appendLog(sid, 'ok', `✔ 构建成功，预览已就绪`);
+        if (sid === currentIdRef.current) setActiveTab('preview');
+      } catch (err) {
+        const msg = (err as Error).message || '构建失败';
+        appendLog(sid, 'error', msg);
+        setRun(sid, { error: msg });
+      } finally {
+        setRun(sid, { building: false });
+      }
+      return;
+    }
+
+    // 本地模式：从前端传文件到服务器构建。
     const files = session.files || [];
     if (files.length === 0) {
       appendLog(sid, 'info', '暂无可预览的代码');
       return;
     }
-    if (runs[sid]?.building) return;
     await runPreviewBuild(sid, files, session.framework);
-  }, [sessions, runs, runPreviewBuild, appendLog]);
+  }, [sessions, runs, runPreviewBuild, appendLog, envConfig]);
 
   const send = useCallback(
     (text: string, mode: RunMode = 'iterate', forcedWorkDir?: string) => {

@@ -206,6 +206,22 @@ export async function buildPreview(
   return url.startsWith('/') ? `${BASE_PREFIX}${url}` : url;
 }
 
+/** 远程模式：文件已在服务器磁盘上，直接传 workDir 让服务器构建预览。 */
+export async function buildPreviewFromDir(
+  sid: string,
+  workDir: string,
+): Promise<string> {
+  const res = await fetch(apiUrl(`/api/preview/${encodeURIComponent(sid)}/build`), {
+    method: 'POST',
+    headers: apiHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ workDir }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.url) throw new Error(data.error || `构建失败 (${res.status})`);
+  const url = data.url as string;
+  return url.startsWith('/') ? `${BASE_PREFIX}${url}` : url;
+}
+
 // ---------- Publish (persistent, publicly shareable site) ----------
 
 export interface PublishResult {

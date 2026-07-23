@@ -232,6 +232,27 @@ export function mountPreview(app) {
     }
   });
 
+  // 远程/云端模式：文件已在服务器磁盘上，无需前端再传文件。
+  // 通过 workDir 直接构建预览。
+  app.post('/api/preview/:sid/build', async (req, res) => {
+    const sid = sanitizeRel(req.params.sid);
+    const { workDir } = req.body || {};
+    if (!sid) return res.status(400).json({ error: '缺少会话 id' });
+    if (!workDir || typeof workDir !== 'string') {
+      return res.status(400).json({ error: '缺少 workDir' });
+    }
+    if (!fs.existsSync(workDir)) {
+      return res.status(400).json({ error: '工作目录不存在' });
+    }
+    try {
+      const url = await withLock(sid, () => buildFromDir(sid, workDir));
+      res.json({ ok: true, url });
+    } catch (err) {
+      console.error('[preview] build from dir failed:', err?.message || err);
+      res.status(500).json({ error: `构建失败：${err?.message || '未知错误'}` });
+    }
+  });
+
   // Serve each session's built output at /preview/<sid>/.
   app.use('/preview/:sid', (req, res, next) => {
     const sid = sanitizeRel(req.params.sid);
