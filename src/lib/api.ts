@@ -222,6 +222,22 @@ export async function buildPreviewFromDir(
   return url.startsWith('/') ? `${BASE_PREFIX}${url}` : url;
 }
 
+/** 远程模式：为已有工作目录启动 Vite Dev Server 预览（免构建、即时加载）。 */
+export async function startDevPreview(
+  sid: string,
+  workDir: string,
+): Promise<string> {
+  const res = await fetch(apiUrl(`/api/preview/${encodeURIComponent(sid)}/dev`), {
+    method: 'POST',
+    headers: apiHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ workDir }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.url) throw new Error(data.error || `启动预览失败 (${res.status})`);
+  const url = data.url as string;
+  return url.startsWith('/') ? `${BASE_PREFIX}${url}` : url;
+}
+
 // ---------- Publish (persistent, publicly shareable site) ----------
 
 export interface PublishResult {

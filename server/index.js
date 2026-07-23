@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import { buildMessages } from './prompt.js';
 import { mountPreview, writeFiles } from './preview.js';
+import { mountDevPreview } from './preview-dev.js';
 import { mountPublish } from './publish.js';
 import { mountEnv } from './env.js';
 import { mountProjects } from './projects.js';
@@ -55,6 +56,9 @@ app.use('/api', (req, res, next) => {
 });
 
 // Multi-file project preview: build with Vite and serve at /preview/<sid>/.
+// Dev-preview middleware must be registered first — it intercepts /preview/:sid
+// for active dev servers before the static-file fallback in mountPreview().
+mountDevPreview(app);
 mountPreview(app);
 
 // Publish: build a persistent, publicly shareable site served at /p/<id>/.

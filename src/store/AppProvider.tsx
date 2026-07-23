@@ -43,7 +43,7 @@ import type { RunMode } from '../lib/orchestrator';
 import {
   BASE_PREFIX,
   buildPreview,
-  buildPreviewFromDir,
+  startDevPreview,
   setApiConfig,
   clearApiConfig,
   writeProjectFiles,
@@ -556,19 +556,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!session) return;
     if (runs[sid]?.building) return;
 
-    // 远程模式：文件已在服务器上，通过 workDir 构建。
+    // 远程模式：文件已在服务器上，通过 workDir 启动 Dev Server 预览。
     const mode = session.envConfig?.mode || envConfig.mode;
     const workDir = session.workDir;
     if (workDir && mode === 'remote') {
-      appendLog(sid, 'cmd', `vite build · 服务器工作目录`);
+      appendLog(sid, 'cmd', `启动预览 dev server`);
       setRun(sid, { building: true });
       try {
-        const url = await buildPreviewFromDir(sid, workDir);
+        const url = await startDevPreview(sid, workDir);
         patchCurrent(sid, (s) => ({ ...s, previewUrl: url, updatedAt: Date.now() }));
-        appendLog(sid, 'ok', `✔ 构建成功，预览已就绪`);
+        appendLog(sid, 'ok', `✔ 预览已就绪`);
         if (sid === currentIdRef.current) setActiveTab('preview');
       } catch (err) {
-        const msg = (err as Error).message || '构建失败';
+        const msg = (err as Error).message || '启动预览失败';
         appendLog(sid, 'error', msg);
         setRun(sid, { error: msg });
       } finally {

@@ -3,7 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import { runCLI, scanWorkspace } from './cli.js';
-import { buildFromDir } from './preview.js';
+import { startDevServer } from './preview-dev.js';
 import { runSSHAndSync, testSSH } from './ssh.js';
 import { ensureAdminForSensitive } from './auth.js';
 
@@ -163,10 +163,10 @@ export function mountEnv(app) {
       let previewUrl = null;
       if (files.length > 0) {
         try {
-          previewUrl = await buildFromDir(sid, workDir);
-          sendSSE(res, 'status', { text: `预览已就绪: ${previewUrl}` });
-        } catch (buildErr) {
-          sendSSE(res, 'status', { text: `预览构建: ${buildErr.message}` });
+          previewUrl = await startDevServer(sid, workDir);
+          sendSSE(res, 'status', { text: '预览已就绪' });
+        } catch (err) {
+          sendSSE(res, 'status', { text: `启动预览: ${err.message}` });
         }
       }
 
@@ -280,10 +280,10 @@ export function mountEnv(app) {
       let previewUrl = null;
       if (files.length > 0) {
         try {
-          previewUrl = await buildFromDir(sid, localWorkDir);
-          sendSSE(res, 'status', { text: `预览已就绪: ${previewUrl}` });
-        } catch (buildErr) {
-          sendSSE(res, 'status', { text: `预览构建: ${buildErr.message}` });
+          previewUrl = await startDevServer(sid, localWorkDir);
+          sendSSE(res, 'status', { text: '预览已就绪' });
+        } catch (err) {
+          sendSSE(res, 'status', { text: `启动预览: ${err.message}` });
         }
       }
 
