@@ -176,6 +176,7 @@ export async function startDevServer(sid, workDir) {
     server: {
       middlewareMode: true,
       hmr: false,
+      allowedHosts: true, // preview accessed through nginx reverse proxy
       fs: {
         allow: [workDir, APP_NODE_MODULES],
       },
