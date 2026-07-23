@@ -63,7 +63,7 @@ jobs:
           port: 22
           script: |
             cd /home/ec2-user/WS/ai-team
-            git pull origin main 2>/dev/null || git pull https://github.com/danblen/ai-team.git main
+            git pull origin main || git pull https://github.com/danblen/ai-team.git main
             npm ci
             npm run build
-            pm2 restart ai-team 2>/dev/null || pm2 start npm --name ai-team -- run start
+            pm2 restart ai-team || pm2 start npm --name ai-team -- run start
