@@ -92,13 +92,13 @@ export function defaultEnvConfig(): EnvironmentConfig {
       authMethod: 'key',
       privateKeyPath: '',
       password: '',
-      cliId: 'claude',
+      cliId: 'opencode',
       remoteWorkDir: '~/ai-team-workspace',
     },
     remote: {
       url: typeof window !== 'undefined' ? window.location.origin : '',
       token: '',
-      cliId: 'claude',
+      cliId: 'opencode',
       workDir: '',
     },
   };

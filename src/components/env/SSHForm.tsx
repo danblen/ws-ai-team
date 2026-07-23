@@ -89,8 +89,8 @@ export default function SSHForm({ config, onChange }: Props) {
           value={config.cliId}
           onChange={(e) => onChange({ cliId: e.target.value })}
         >
-          <option value="claude">Claude Code CLI</option>
           <option value="opencode">OpenCode CLI</option>
+          <option value="claude">Claude Code CLI</option>
           <option value="aider">Aider</option>
         </select>
         <p className="env-hint">需已在远程服务器安装。Agent 只跑在远程，「选 Agent」= 选远程装了哪个 CLI。</p>

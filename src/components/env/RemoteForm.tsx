@@ -43,8 +43,8 @@ export default function RemoteForm({ config, onChange }: Props) {
           value={config.cliId}
           onChange={(e) => onChange({ cliId: e.target.value })}
         >
-          <option value="claude">Claude Code CLI</option>
           <option value="opencode">OpenCode CLI</option>
+          <option value="claude">Claude Code CLI</option>
           <option value="aider">Aider</option>
         </select>
         <p className="env-hint">需已在云端服务器安装。任务将在远端由该 CLI 执行。</p>
