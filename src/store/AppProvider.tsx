@@ -104,8 +104,9 @@ interface AppState {
   setEnvConfig: (config: EnvironmentConfig) => void;
   /** 设置/清除本会话选定的本地工作目录（传 null 清除）。 */
   setSessionWorkDir: (id: string, dir: string | null) => void;
-  /** 云端模式：为会话绑定一个项目（checkout worktree 分支并锁定）。 */
-  bindSessionProject: (id: string, project: RemoteProject) => Promise<void>;
+  /** 云端模式：为会话绑定一个项目（checkout worktree 分支并锁定）。
+   *  isNew=true 表示本次新建的项目（而非选取已有项目继续）。 */
+  bindSessionProject: (id: string, project: RemoteProject, isNew?: boolean) => Promise<void>;
   /** 云端模式：把当前会话分支合并到主干。 */
   mergeSessionProject: (id: string) => Promise<void>;
   /** 本地模式：已记录的历史项目（按名称）。 */
@@ -368,7 +369,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const bindSessionProject = useCallback(
-    async (id: string, project: RemoteProject) => {
+    async (id: string, project: RemoteProject, isNew?: boolean) => {
       appendLog(id, 'info', `正在为项目「${project.name}」创建工作树…`);
       try {
         const { workDir, branch } = await checkoutProject(project.id, id);
@@ -378,6 +379,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           projectName: project.name,
           workDir,
           projectLocked: true,
+          newProject: Boolean(isNew),
           merged: false,
           updatedAt: Date.now(),
         }));
@@ -629,6 +631,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       appendLog(sid, 'cmd', `新任务：${goal}`);
       if (priorMessages.length === 0) {
         renameSession(sid, goal.length <= 20 ? goal : goal.slice(0, 20) + '…');
+        // 新会话首次发送后切到终端，实时展示运行日志。
+        if (sid === currentIdRef.current) setActiveTab('terminal');
       }
 
       const controller = new AbortController();

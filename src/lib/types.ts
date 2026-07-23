@@ -69,6 +69,9 @@ export interface Session {
   projectName?: string;
   /** 已绑定项目后锁定本会话，不可再切换项目。 */
   projectLocked?: boolean;
+  /** 远程模式：本会话绑定的是「本次新建」的项目（而非选取已有项目继续开发）。
+   *  新建项目一开始没有可合并的主干工作，故隐藏工作树/合并到主干等入口。 */
+  newProject?: boolean;
   /** 本地模式开发方式：'worktree' 新建 Git 工作树开发（默认）；'direct' 直接在当前分支开发。 */
   localDevMode?: 'worktree' | 'direct';
   /** 会话分支是否已合并到主干。 */

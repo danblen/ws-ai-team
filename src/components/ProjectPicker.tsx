@@ -72,17 +72,24 @@ function RemoteBoundCard() {
         <span className="project-bound-name">📦 {s.projectName || s.projectId}</span>
         <span className="project-lock" title="已锁定，本会话不可切换项目">🔒 已锁定</span>
       </div>
-      {s.workDir && <p className="env-hint" title={maskRemoteWorkDir(s.workDir)}>工作树：{maskRemoteWorkDir(s.workDir)}</p>}
-      {error && <p className="env-hint warn">{error}</p>}
-      <div className="project-actions">
-        {s.merged ? (
-          <span className="project-merged">✔ 已合并到主干</span>
-        ) : (
-          <button className="btn-primary" onClick={merge} disabled={merging || app.running}>
-            {merging ? '正在合并…' : '合并到主干'}
-          </button>
-        )}
-      </div>
+      {/* 新建项目一开始无主干可合并，不展示工作树路径与「合并到主干」。 */}
+      {s.newProject ? (
+        <p className="env-hint">新建项目，直接开始开发即可。</p>
+      ) : (
+        <>
+          {s.workDir && <p className="env-hint" title={maskRemoteWorkDir(s.workDir)}>工作树：{maskRemoteWorkDir(s.workDir)}</p>}
+          {error && <p className="env-hint warn">{error}</p>}
+          <div className="project-actions">
+            {s.merged ? (
+              <span className="project-merged">✔ 已合并到主干</span>
+            ) : (
+              <button className="btn-primary" onClick={merge} disabled={merging || app.running}>
+                {merging ? '正在合并…' : '合并到主干'}
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </section>
   );
 }
@@ -232,7 +239,8 @@ function RemotePicker() {
     try {
       const project = await createProject(n);
       setName('');
-      await app.bindSessionProject(s.id, project);
+      // 新建项目：一开始无可合并的主干工作，标记 isNew 以隐藏工作树/合并入口。
+      await app.bindSessionProject(s.id, project, true);
     } catch (e) {
       setError((e as Error).message || '新建项目失败');
     } finally {
