@@ -45,10 +45,52 @@ const DEFAULT_INDEX_HTML = `<!doctype html>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
 `;
+
+/** Possible entry file names (in priority order). */
+const ENTRY_CANDIDATES = [
+  'src/main.jsx',
+  'src/main.tsx',
+  'src/index.jsx',
+  'src/index.tsx',
+  'src/app.jsx',
+  'src/app.tsx',
+  'src/main.js',
+  'src/main.ts',
+];
+
+/** After writing files, find the actual entry file and inject it into index.html. */
+function patchEntry(dir) {
+  const indexPath = path.join(dir, 'index.html');
+  if (!fs.existsSync(indexPath)) return;
+
+  // Find the actual entry from files on disk.
+  let entry = null;
+  for (const candidate of ENTRY_CANDIDATES) {
+    if (fs.existsSync(path.join(dir, candidate))) {
+      entry = candidate;
+      break;
+    }
+  }
+  if (!entry) return;
+
+  let html = fs.readFileSync(indexPath, 'utf8');
+
+  // Replace any existing module script that has a /src/ or ./src/ reference.
+  const hadScript = /<script[^>]*type=["']module["'][^>]*src=["'][^"']*["'][^>]*><\/script>/.test(html);
+  if (hadScript) {
+    html = html.replace(
+      /<script[^>]*type=["']module["'][^>]*src=["'][^"']*["'][^>]*><\/script>/,
+      `<script type="module" src="./${entry}"></script>`,
+    );
+  } else if (html.includes('<div id="root">') || html.includes('<div id="app">') || html.includes('<div id="root')) {
+    html = html.replace('</body>', `  <script type="module" src="./${entry}"></script>\n</body>`);
+  }
+
+  fs.writeFileSync(indexPath, html, 'utf8');
+}
 
 /** Fresh session dir, keeping nothing from a previous iteration. */
 function resetDir(dir) {
@@ -61,9 +103,10 @@ async function buildReact(sid, files) {
   resetDir(dir);
   writeFiles(dir, files);
 
-  // Ensure an entry HTML exists for Vite.
+  // Ensure an entry HTML exists for Vite, then patch in the real entry script.
   const indexPath = path.join(dir, 'index.html');
   if (!fs.existsSync(indexPath)) fs.writeFileSync(indexPath, DEFAULT_INDEX_HTML, 'utf8');
+  patchEntry(dir);
 
   // Import lazily so the server can boot even if vite isn't needed yet.
   const { build } = await import('vite');
@@ -107,6 +150,7 @@ export async function buildFromDir(sid, srcDir) {
   // Ensure an index.html exists for Vite.
   const indexPath = path.join(srcDir, 'index.html');
   if (!fs.existsSync(indexPath)) fs.writeFileSync(indexPath, DEFAULT_INDEX_HTML, 'utf8');
+  patchEntry(srcDir);
 
   const { build } = await import('vite');
   const react = (await import('@vitejs/plugin-react')).default;
@@ -149,6 +193,7 @@ export async function buildForPublish(destDir, files, framework) {
   // Ensure an entry HTML exists for Vite.
   const indexPath = path.join(destDir, 'index.html');
   if (!fs.existsSync(indexPath)) fs.writeFileSync(indexPath, DEFAULT_INDEX_HTML, 'utf8');
+  patchEntry(destDir);
 
   const { build } = await import('vite');
   const react = (await import('@vitejs/plugin-react')).default;
