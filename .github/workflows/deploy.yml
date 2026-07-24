@@ -62,13 +62,21 @@ jobs:
           key: ${{ secrets.AWS_SSH_KEY }}
           port: 22
           script: |
+            set -e
             cd /home/ec2-user/ws/aiteam
             git pull --no-rebase origin main
-            docker build -t aiteam .
-            docker stop aiteam || true
-            docker rm aiteam || true
-            docker run -d --name aiteam --restart unless-stopped \
-              -p 5110:5110 \
-              -v /home/ec2-user/ws/aiteamoutput:/aiteamoutput \
-              --env-file /home/ec2-user/.aiteam/env \
-              aiteam
+
+            # Build frontend inside the runtime container (no image rebuild needed)
+            docker run --rm -e NODE_ENV=development -v "$(pwd):/app" -w /app aiteam sh -c "npm install && npm run build"
+
+            # Start container with code mounted, or restart if already running
+            if docker inspect aiteam >/dev/null 2>&1; then
+              docker restart aiteam
+            else
+              docker run -d --name aiteam --restart unless-stopped \
+                -p 5110:5110 \
+                -v /home/ec2-user/ws/aiteam:/app \
+                -v /home/ec2-user/ws/aiteamoutput:/aiteamoutput \
+                --env-file /home/ec2-user/.aiteam/env \
+                aiteam
+            fi
