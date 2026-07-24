@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { execFile, execSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -178,6 +178,9 @@ export function mountProjects(app) {
     try {
       fs.mkdirSync(dir, { recursive: true });
       await git(dir, ['init']);
+      // 沙箱用户（sandbox-10000~10199）需要能读写 .git
+      await git(dir, ['config', 'core.sharedRepository', 'true']);
+      execSync(`chmod -R a+wX "${path.join(dir, '.git')}"`, { timeout: 10000 });
       // 初始空提交，保证有基提交可开分支。
       await git(dir, [...GIT_IDENTITY, 'commit', '--allow-empty', '-m', 'init']);
 
