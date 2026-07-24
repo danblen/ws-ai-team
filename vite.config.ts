@@ -10,7 +10,10 @@ let GIT_COMMIT = 'unknown';
 let BUILD_NUM = '0';
 try {
   GIT_COMMIT = execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
-  BUILD_NUM = execSync('git rev-list --count HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  // GITHUB_RUN_NUMBER 是 GHA 每次 workflow run 的唯一递增编号（per-push）；
+  // BUILD_NUM 允许 Docker / 本地环境显式传入。优先使用这两个，保证每 push 一次 +1。
+  BUILD_NUM = process.env.GITHUB_RUN_NUMBER || process.env.BUILD_NUM
+    || execSync('git rev-list --count HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
 } catch {} // git may not be available (e.g. Docker build)
 
 export default defineConfig({
