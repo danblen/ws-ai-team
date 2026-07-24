@@ -64,6 +64,11 @@ jobs:
           script: |
             cd /home/ec2-user/WS/ai-team
             git pull --no-rebase origin main
-            npm ci
-            npm run build
-            pm2 restart ai-team || pm2 start npm --name ai-team -- run start
+            docker build -t ai-team .
+            docker stop ai-team || true
+            docker rm ai-team || true
+            docker run -d --name ai-team --restart unless-stopped \
+              -p 5110:5110 \
+              -v /home/ec2-user/ws/ai-team-output:/root/ws/ai-team-output \
+              --env-file /home/ec2-user/.ai-team/env \
+              ai-team
