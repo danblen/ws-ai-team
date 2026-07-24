@@ -7,6 +7,9 @@ FROM node:22-bookworm-slim
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y git sudo && rm -rf /var/lib/apt/lists/*
 
+# Git 安全配置：沙箱用户（sandbox-10000~10199）需要能操作工作目录
+RUN git config --system safe.directory '*'
+
 # Install CLI tools
 RUN npm install -g @anthropic-ai/claude-code opencode-ai
 
