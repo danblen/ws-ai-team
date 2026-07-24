@@ -6,7 +6,7 @@ import os from 'node:os';
 import { runCLI, scanWorkspace } from './cli.js';
 import { startDevServer } from './preview-dev.js';
 import { runSSHAndSync, testSSH } from './ssh.js';
-import { ensureAdminForSensitive } from './auth.js';
+import { ensureAdminForSensitive, checkConversationLimit } from './auth.js';
 import { ensureIsolatedUser, secureWorkspace, removeIsolatedUser } from './user-isolate.js';
 
 // 本机可被探测到的 CLI Agent 清单。
@@ -124,6 +124,9 @@ export function mountEnv(app) {
     if (!task || !cliId || !sid) {
       return res.status(400).json({ error: '缺少参数: task, cliId, sid' });
     }
+
+    // 对话次数限制：仅做闸门检查（计数由 /api/conversation/start 统一管理）。
+    if (!checkConversationLimit(req, res)) return;
 
     // 在「工作根目录/项目名」子目录中执行；若 direct 则直接以选定目录为项目根。
     const workDir = resolveProjectDir(reqWorkDir, projectName, sid, req.user?.email, direct);
@@ -263,6 +266,9 @@ export function mountEnv(app) {
         error: '缺少参数: task, cliId, sid, ssh.host',
       });
     }
+
+    // 对话次数限制：仅做闸门检查（计数由 /api/conversation/start 统一管理）。
+    if (!checkConversationLimit(req, res)) return;
 
     const localWorkDir = path.join(WORKSPACES_DIR, sid);
     fs.mkdirSync(localWorkDir, { recursive: true });

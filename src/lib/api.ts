@@ -113,6 +113,28 @@ export async function fetchMe(): Promise<{ email: string }> {
   return { email: data.email };
 }
 
+// ---------- 对话次数追踪 ----------
+
+export interface ConversationUsage {
+  used: number;
+  max: number;
+}
+
+/**
+ * 在每次 send() 开始时调用，扣减一次对话配额。
+ * 服务端负责校验并持久化计数，前端无法绕过。
+ * 超管不限制；普通用户达到上限后返回 403。
+ */
+export async function trackConversation(): Promise<ConversationUsage> {
+  const res = await fetch(apiUrl('/api/conversation/start'), {
+    method: 'POST',
+    headers: apiHeaders({ 'Content-Type': 'application/json' }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || '对话次数已达上限');
+  return { used: data.used, max: data.max };
+}
+
 
 // ---------- API functions ----------
 

@@ -59,6 +59,7 @@ import {
   fetchMe,
   setAuthToken,
   clearAuthToken,
+  trackConversation,
 } from '../lib/api';
 
 export type WorkTab = 'overview' | 'preview' | 'code' | 'cloud' | 'files' | 'terminal' | 'publish' | 'team';
@@ -718,6 +719,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const env = createEnvironment(cfg, sid, projectName, sessionWorkDir || undefined);
         if (env) {
           (async () => {
+            // 对话次数限制：服务端计数，超管不限制。
+            try {
+              await trackConversation();
+            } catch (err) {
+              const msg = (err as Error).message || '对话次数已达上限';
+              appendLog(sid, 'error', msg);
+              setRun(sid, { running: false, error: msg });
+              return;
+            }
             try {
               for await (const event of env.run(goal, cfg.local.cliId, controller.signal)) {
                 switch (event.type) {
@@ -824,6 +834,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         appendLog(sid, 'agent', `☁️ 云端 Agent (${host}) 开始在服务器上工作…`);
 
         (async () => {
+          // 对话次数限制：服务端计数，超管不限制。
+          try {
+            await trackConversation();
+          } catch (err) {
+            const msg = (err as Error).message || '对话次数已达上限';
+            appendLog(sid, 'error', msg);
+            setRun(sid, { running: false, error: msg });
+            return;
+          }
           try {
             // 自动创建并绑定项目，让生成的代码持久化到项目仓库中
             let workDir = sessionWorkDir;
@@ -946,6 +965,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const env = createEnvironment(cfg, sid, projectName);
         if (env) {
           (async () => {
+            // 对话次数限制：服务端计数，超管不限制。
+            try {
+              await trackConversation();
+            } catch (err) {
+              const msg = (err as Error).message || '对话次数已达上限';
+              appendLog(sid, 'error', msg);
+              setRun(sid, { running: false, error: msg });
+              return;
+            }
             try {
               for await (const event of env.run(goal, cfg.ssh.cliId, controller.signal)) {
                 switch (event.type) {
@@ -1022,90 +1050,102 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       // ── Builtin mode: runCrew (existing) ──
-      const ctx = { currentFiles, history: condenseHistory(priorMessages) };
-      let firstNonCodeSummary = '';
+      (async () => {
+        // 对话次数限制：服务端计数，超管不限制。
+        try {
+          await trackConversation();
+        } catch (err) {
+          const msg = (err as Error).message || '对话次数已达上限';
+          appendLog(sid, 'error', msg);
+          setRun(sid, { running: false, error: msg });
+          return;
+        }
 
-      runCrew(
-        agents,
-        goal,
-        effectiveMode,
-        ctx,
-        {
-          onSystem: (msg) => {
-            appendMessage(sid, { id: uid('sys'), kind: 'system', content: msg });
-            appendLog(sid, 'info', msg);
-          },
-          onAgentStart: (agent) => {
-            liveContentRefs.current[sid] = '';
-            codeAgentRefs.current[sid] = agent.producesCode;
-            setRun(sid, { live: { agent, content: '', phase: 'thinking' }, liveFiles: [] });
-            appendLog(sid, 'agent', `${agent.emoji} ${agent.name} 开始工作…`);
-            if (agent.producesCode && sid === currentIdRef.current) setActiveTab('code');
-          },
-          onAgentDelta: (t) => {
-            const content = (liveContentRefs.current[sid] || '') + t;
-            liveContentRefs.current[sid] = content;
-            setRuns((prev) => {
-              const cur = prev[sid] || IDLE;
-              const live = cur.live ? { ...cur.live, content, phase: 'writing' as const } : cur.live;
-              const liveFiles = codeAgentRefs.current[sid]
-                ? parseEngineerOutput(content).files
-                : cur.liveFiles;
-              return { ...prev, [sid]: { ...cur, live, liveFiles } };
-            });
-          },
-          onAgentDone: (agent, content) => {
-            const parsed = agent.producesCode ? parseEngineerOutput(content) : null;
-            appendMessage(sid, {
-              id: uid('a'),
-              kind: 'agent',
-              content,
-              agentId: agent.id,
-              agentName: agent.name,
-              emoji: agent.emoji,
-              color: agent.color,
-              hasCode: Boolean(parsed && parsed.files.length > 0),
-            });
-            if (!agent.producesCode && !firstNonCodeSummary) {
-              firstNonCodeSummary = stripFences(content);
-            }
-            if (parsed && parsed.files.length > 0) {
-              patchCurrent(sid, (s) => ({
-                ...s,
-                files: parsed.files,
-                framework: parsed.framework,
-                summary: firstNonCodeSummary || s.summary,
-                updatedAt: Date.now(),
-              }));
-              appendLog(sid, 'ok', `✔ ${agent.name} 生成 ${parsed.files.length} 个文件`);
+        const ctx = { currentFiles, history: condenseHistory(priorMessages) };
+        let firstNonCodeSummary = '';
 
-              // 内置团队产出的代码仅在内存中，写入磁盘目录持久化。
-              // 会话选定目录时直接写入该目录，否则写入 <工作根目录>/<项目名>。
-              const projectDir = sessionWorkDir
-                ? sessionWorkDir
-                : cfg.local.workDir
-                  ? `${cfg.local.workDir}/${projectName}`
-                  : null;
-              if (projectDir) {
-                writeProjectFiles(parsed.files, projectDir).catch(() => {});
+        runCrew(
+          agents,
+          goal,
+          effectiveMode,
+          ctx,
+          {
+            onSystem: (msg) => {
+              appendMessage(sid, { id: uid('sys'), kind: 'system', content: msg });
+              appendLog(sid, 'info', msg);
+            },
+            onAgentStart: (agent) => {
+              liveContentRefs.current[sid] = '';
+              codeAgentRefs.current[sid] = agent.producesCode;
+              setRun(sid, { live: { agent, content: '', phase: 'thinking' }, liveFiles: [] });
+              appendLog(sid, 'agent', `${agent.emoji} ${agent.name} 开始工作…`);
+              if (agent.producesCode && sid === currentIdRef.current) setActiveTab('code');
+            },
+            onAgentDelta: (t) => {
+              const content = (liveContentRefs.current[sid] || '') + t;
+              liveContentRefs.current[sid] = content;
+              setRuns((prev) => {
+                const cur = prev[sid] || IDLE;
+                const live = cur.live ? { ...cur.live, content, phase: 'writing' as const } : cur.live;
+                const liveFiles = codeAgentRefs.current[sid]
+                  ? parseEngineerOutput(content).files
+                  : cur.liveFiles;
+                return { ...prev, [sid]: { ...cur, live, liveFiles } };
+              });
+            },
+            onAgentDone: (agent, content) => {
+              const parsed = agent.producesCode ? parseEngineerOutput(content) : null;
+              appendMessage(sid, {
+                id: uid('a'),
+                kind: 'agent',
+                content,
+                agentId: agent.id,
+                agentName: agent.name,
+                emoji: agent.emoji,
+                color: agent.color,
+                hasCode: Boolean(parsed && parsed.files.length > 0),
+              });
+              if (!agent.producesCode && !firstNonCodeSummary) {
+                firstNonCodeSummary = stripFences(content);
               }
+              if (parsed && parsed.files.length > 0) {
+                patchCurrent(sid, (s) => ({
+                  ...s,
+                  files: parsed.files,
+                  framework: parsed.framework,
+                  summary: firstNonCodeSummary || s.summary,
+                  updatedAt: Date.now(),
+                }));
+                appendLog(sid, 'ok', `✔ ${agent.name} 生成 ${parsed.files.length} 个文件`);
 
-              void runPreviewBuild(sid, parsed.files, parsed.framework);
-            } else if (!agent.producesCode) {
-              appendLog(sid, 'ok', `✔ ${agent.name} 完成`);
-            }
-            setRun(sid, { live: null });
+                // 内置团队产出的代码仅在内存中，写入磁盘目录持久化。
+                // 会话选定目录时直接写入该目录，否则写入 <工作根目录>/<项目名>。
+                const projectDir = sessionWorkDir
+                  ? sessionWorkDir
+                  : cfg.local.workDir
+                    ? `${cfg.local.workDir}/${projectName}`
+                    : null;
+                if (projectDir) {
+                  writeProjectFiles(parsed.files, projectDir).catch(() => {});
+                }
+
+                void runPreviewBuild(sid, parsed.files, parsed.framework);
+              } else if (!agent.producesCode) {
+                appendLog(sid, 'ok', `✔ ${agent.name} 完成`);
+              }
+              setRun(sid, { live: null });
+            },
+            onError: (msg) => {
+              appendLog(sid, 'error', msg);
+              setRun(sid, { error: msg });
+            },
           },
-          onError: (msg) => {
-            appendLog(sid, 'error', msg);
-            setRun(sid, { error: msg });
-          },
-        },
-        controller.signal,
-      ).finally(() => {
-        setRun(sid, { running: false, live: null, liveFiles: [] });
-        delete abortRefs.current[sid];
-      });
+          controller.signal,
+        ).finally(() => {
+          setRun(sid, { running: false, live: null, liveFiles: [] });
+          delete abortRefs.current[sid];
+        });
+      })();
     },
     [agents, appendLog, appendMessage, current, envConfig, patchCurrent, renameSession, runPreviewBuild, runs, sessions, setRun],
   );
