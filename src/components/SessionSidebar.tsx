@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { modeIcon } from './EnvironmentPicker';
 import { LogoIcon } from './LogoIcon';
 import { useApp } from '../store/AppProvider';
@@ -114,6 +114,21 @@ export default function SessionSidebar({ health, onToggleSidebar, onOpenConfig, 
   const { authEmail, logout } = app;
   const llmConfig = getLlmConfig();
   const configured = Boolean(llmConfig.apiKey);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // 点击外部关闭浮窗
+  const handleClickOutside = useCallback((e: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      setUserMenuOpen(false);
+    }
+  }, []);
+  useEffect(() => {
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [userMenuOpen, handleClickOutside]);
 
   return (
     <aside className="sidebar">
@@ -165,9 +180,27 @@ export default function SessionSidebar({ health, onToggleSidebar, onOpenConfig, 
             : '后端未连接'}
         </button>
         {authEmail ? (
-          <button className="btn ghost user-btn" onClick={logout} title="点击退出登录">
-            👤 {authEmail} · 退出
-          </button>
+          <div className="user-btn-wrap" ref={menuRef}>
+            <button
+              className="btn ghost user-btn"
+              onClick={() => setUserMenuOpen((v) => !v)}
+              title="用户菜单"
+            >
+              👤 {authEmail}
+            </button>
+            {userMenuOpen && (
+              <div className="user-menu-popup">
+                <div className="user-menu-header">
+                  <span className="user-menu-email">{authEmail}</span>
+                  <span className="user-menu-label">已登录</span>
+                </div>
+                <div className="user-menu-divider" />
+                <button className="user-menu-item logout" onClick={logout}>
+                  退出登录
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
           <button className="btn ghost user-btn" onClick={onOpenAuth} title="登录 / 注册">
             登录 / 注册
