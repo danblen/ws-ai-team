@@ -470,6 +470,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const framework: Framework = hasRootHtml && !hasJsx ? 'html' : 'react';
           patchCurrent(id, (s) => ({ ...s, files, framework, updatedAt: Date.now() }));
           appendLog(id, 'ok', `✔ 已载入项目中的 ${files.length} 个文件`);
+          // 载入后自动构建预览，让概览页的预览区可直接查看。
+          if (id === currentIdRef.current) {
+            setTimeout(() => previewNow(), 100);
+          }
         } else {
           // 目录为空：显式清空，避免从有内容目录切换过来时残留旧文件，
           // 并给出明确日志（而不是让代码区静默地空白）。
@@ -480,7 +484,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         appendLog(id, 'error', (err as Error).message || '读取项目文件失败');
       }
     },
-    [appendLog, patchCurrent],
+    [appendLog, patchCurrent, previewNow],
   );
 
   // 本地模式：切换开发方式（仅在尚未切出工作树时允许）。
