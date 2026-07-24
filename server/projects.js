@@ -182,7 +182,7 @@ export function mountProjects(app) {
       await git(dir, [...GIT_IDENTITY, 'commit', '--allow-empty', '-m', 'init']);
 
       const now = Date.now();
-      const project = { id, name, framework: 'react', createdAt: now, updatedAt: now, branches: {} };
+      const project = { id, name, workDir: dir, framework: 'react', createdAt: now, updatedAt: now, branches: {} };
       reg[owner] = [project, ...(reg[owner] || [])];
       writeRegistry(reg);
       res.json({ ok: true, project });

@@ -49,6 +49,7 @@ import {
   writeProjectFiles,
   readLocalDirFiles,
   checkoutProject,
+  createProject,
   mergeProject,
   checkoutLocalProject,
   mergeLocalProject,
@@ -784,11 +785,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setRun(sid, { live: { agent: remoteAgent, content: '', phase: 'thinking' }, liveFiles: [] });
         appendLog(sid, 'agent', `☁️ 云端 Agent (${host}) 开始在服务器上工作…`);
 
-        const env = createEnvironment(cfg, sid, projectName, sessionWorkDir || undefined);
-        if (env) {
-          (async () => {
-            try {
-              for await (const event of env.run(goal, cfg.remote.cliId, controller.signal)) {
+        (async () => {
+          try {
+            // 自动创建并绑定项目，让生成的代码持久化到项目仓库中
+            let workDir = sessionWorkDir;
+            if (!session?.projectId && !session?.projectRoot) {
+              appendLog(sid, 'info', '正在为新会话创建项目…');
+              const project = await createProject(goal.slice(0, 40));
+              patchCurrent(sid, (s) => ({
+                ...s,
+                projectId: project.id,
+                projectName: project.name,
+                projectRoot: project.workDir,
+                workDir: project.workDir,
+                localDevMode: 'direct',
+                projectLocked: true,
+                newProject: true,
+                merged: false,
+                updatedAt: Date.now(),
+              }));
+              workDir = project.workDir;
+              appendLog(sid, 'ok', `✔ 已创建项目「${project.name}」`);
+            }
+
+            const env = createEnvironment(cfg, sid, projectName, workDir || undefined);
+            if (!env) {
+              appendLog(sid, 'error', '创建云端执行环境失败');
+              setRun(sid, { running: false, error: '创建云端执行环境失败' });
+              return;
+            }
+
+            for await (const event of env.run(goal, cfg.remote.cliId, controller.signal)) {
                 switch (event.type) {
                   case 'delta': {
                     const c = (liveContentRefs.current[sid] || '') + event.text;
@@ -859,7 +886,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
               delete abortRefs.current[sid];
             }
           })();
-        }
         return;
       }
 

@@ -287,6 +287,7 @@ export async function getPublishInfo(sid: string, target?: PublishTarget): Promi
 export interface RemoteProject {
   id: string;
   name: string;
+  workDir: string;
   framework?: Framework;
   createdAt: number;
   updatedAt: number;
