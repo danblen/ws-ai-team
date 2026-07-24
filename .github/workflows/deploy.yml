@@ -36,6 +36,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          BUILD_NUM: ${{ github.run_number }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
@@ -69,7 +71,7 @@ jobs:
             git pull --no-rebase origin main
 
             # Build frontend inside the runtime container (no image rebuild needed)
-            docker run --rm -e NODE_ENV=development -v "$(pwd):/app":Z -w /app aiteam sh -c "npm install && npm run build"
+            docker run --rm -e NODE_ENV=development -e BUILD_NUM=${{ github.run_number }} -v "$(pwd):/app":Z -w /app aiteam sh -c "npm install && npm run build"
 
             # Start container with code mounted, or restart if already running
             if docker inspect aiteam >/dev/null 2>&1; then
@@ -100,7 +102,7 @@ jobs:
             git pull --no-rebase origin main
 
             # Build frontend inside the runtime container (no image rebuild needed)
-            docker run --rm -e NODE_ENV=development -v "$(pwd):/app" -w /app aiteam sh -c "npm install && npm run build"
+            docker run --rm -e NODE_ENV=development -e BUILD_NUM=${{ github.run_number }} -v "$(pwd):/app" -w /app aiteam sh -c "npm install && npm run build"
 
             # Start container with code mounted, or restart if already running
             if docker inspect aiteam >/dev/null 2>&1; then
