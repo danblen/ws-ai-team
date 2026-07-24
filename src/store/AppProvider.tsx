@@ -395,7 +395,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const framework: Framework = hasRootHtml && !hasJsx ? 'html' : 'react';
           patchCurrent(id, (s) => ({ ...s, files, framework, updatedAt: Date.now() }));
           appendLog(id, 'ok', `✔ 已载入项目中的 ${files.length} 个文件`);
-          if (id === currentIdRef.current) setActiveTab('code');
+          if (id === currentIdRef.current) {
+            setActiveTab('code');
+            // 载入后自动构建预览，与本地模式的行为一致。
+            setTimeout(() => previewNowRef.current(), 100);
+          }
         }
       } catch (err) {
         appendLog(id, 'error', (err as Error).message || '绑定项目失败');
