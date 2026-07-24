@@ -8,6 +8,7 @@ import { fetchHealth, readLocalDirFiles } from './lib/api';
 import { projectDirName } from './lib/storage';
 import { useApp } from './store/AppProvider';
 import type { HealthInfo, ProjectFile } from './lib/types';
+import { APP_VERSION, BUILD_NUM } from './version';
 
 export default function App() {
   const app = useApp();
@@ -96,7 +97,7 @@ export default function App() {
         />
       )}
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
-      <div className="version-tag" title={`Deploy: ${__COMMIT_HASH__}`}>v{__APP_VERSION__}.b{__BUILD_NUM__}</div>
+      <div className="version-tag">v{APP_VERSION}.b{BUILD_NUM}</div>
     </div>
   );
 }
