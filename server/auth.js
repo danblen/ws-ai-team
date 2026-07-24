@@ -141,6 +141,68 @@ export function ensureAdminForSensitive(req, res) {
   return false;
 }
 
+// ---------- 对话次数限制 ----------
+// 每个邮箱只能发 N 次对话，超管不限制。
+// 可通过环境变量 MAX_CONVERSATIONS_PER_USER 覆盖（默认 5）。
+export const MAX_CONVERSATIONS_PER_USER = Math.max(1, parseInt(process.env.MAX_CONVERSATIONS_PER_USER || '5', 10) || 5);
+
+/** 读取用户的已用对话次数。 */
+export function getConversationCount(email) {
+  const user = findUser(email);
+  if (!user) return 0;
+  return user.conversationCount || 0;
+}
+
+/** 递增用户的已用对话次数 +1，立即持久化到 users.json。 */
+export function incrementConversationCount(email) {
+  const users = readUsers();
+  const target = normalizeEmail(email);
+  const user = users.find((u) => u.email === target);
+  if (!user) return;
+  user.conversationCount = (user.conversationCount || 0) + 1;
+  writeUsers(users);
+}
+
+/**
+ * 对话次数限制闸门：
+ * - 未启用鉴权 → 放行（本地模式无限制）；
+ * - 管理员 → 放行（超管不限制）；
+ * - API_TOKEN 持有者 → 放行（服务间调用不限制）；
+ * - 已用次数 >= MAX_CONVERSATIONS_PER_USER → 写出 403 并返回 false；
+ * - 否则放行并返回 true。
+ *
+ * 调用方在拿到 true 后应立即调用 incrementConversationCount 扣减次数，
+ * 确保「先扣后执行」，杜绝并发绕过。
+ */
+export function checkConversationLimit(req, res) {
+  if (!authRequired()) return true;
+
+  // API_TOKEN 持有者视为服务间调用，不限制。
+  const header = req.headers.authorization || '';
+  if (process.env.API_TOKEN && header === `Bearer ${process.env.API_TOKEN}`) return true;
+
+  // 超管不限制。
+  if (isAdmin(req)) return true;
+
+  const email = req.user?.email;
+  if (!email) {
+    // 没有用户上下文（理论上不会走到这里，因为有鉴权中间件），安全放行。
+    return true;
+  }
+
+  const used = getConversationCount(email);
+  if (used >= MAX_CONVERSATIONS_PER_USER) {
+    res.status(403).json({
+      error: `对话次数已达上限（${MAX_CONVERSATIONS_PER_USER} 次），请联系管理员`,
+      limitExceeded: true,
+      used,
+      max: MAX_CONVERSATIONS_PER_USER,
+    });
+    return false;
+  }
+  return true;
+}
+
 // ---------- 路由 ----------
 export function mountAuth(app) {
   // 注册：邮箱唯一，密码至少 6 位。

@@ -10,7 +10,7 @@ import { mountDevPreview } from './preview-dev.js';
 import { mountPublish } from './publish.js';
 import { mountEnv } from './env.js';
 import { mountProjects } from './projects.js';
-import { mountAuth, authRequired, authFromRequest } from './auth.js';
+import { mountAuth, authRequired, authFromRequest, checkConversationLimit, incrementConversationCount, getConversationCount, MAX_CONVERSATIONS_PER_USER } from './auth.js';
 
 // override so values in .env win over any pre-existing shell env vars.
 dotenv.config();
@@ -84,6 +84,16 @@ app.post('/api/write-project-files', (req, res) => {
 // --- Health probe ---
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, authRequired: authRequired() });
+});
+
+// --- 对话次数追踪 ---
+// 前端在每次 send() 开始时调用，扣减一次对话配额。
+// 所有执行路径（内置/CLI/远程/SSH）统一由此端点计数。
+app.post('/api/conversation/start', (req, res) => {
+  if (!checkConversationLimit(req, res)) return;
+  incrementConversationCount(req.user?.email);
+  const used = getConversationCount(req.user?.email);
+  res.json({ ok: true, used, max: MAX_CONVERSATIONS_PER_USER });
 });
 
 /**
@@ -168,6 +178,10 @@ async function streamCompletion(res, messages, { apiKey, baseUrl, model }) {
 }
 
 app.post('/api/chat', async (req, res) => {
+  // 对话次数限制：仅做闸门检查（计数由 /api/conversation/start 统一管理，
+  // 避免 builtin 模式下一次 send() 触发多次 /api/chat 导致重复计数）。
+  if (!checkConversationLimit(req, res)) return;
+
   const { system, messages, apiKey, baseUrl, model } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: '缺少 messages 参数' });
@@ -188,6 +202,9 @@ app.post('/api/chat', async (req, res) => {
  * Body: { prompt: string, history: [{role, content}] }
  */
 app.post('/api/generate', async (req, res) => {
+  // 对话次数限制：仅做闸门检查（计数由 /api/conversation/start 统一管理）。
+  if (!checkConversationLimit(req, res)) return;
+
   const { prompt, history, apiKey, baseUrl, model } = req.body || {};
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: '缺少 prompt 参数' });
