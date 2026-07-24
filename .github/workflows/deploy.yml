@@ -62,13 +62,13 @@ jobs:
           key: ${{ secrets.AWS_SSH_KEY }}
           port: 22
           script: |
-            cd /home/ec2-user/WS/ai-team
+            cd /home/ec2-user/WS/aiteam
             git pull --no-rebase origin main
-            docker build -t ai-team .
-            docker stop ai-team || true
-            docker rm ai-team || true
-            docker run -d --name ai-team --restart unless-stopped \
+            docker build -t aiteam .
+            docker stop aiteam || true
+            docker rm aiteam || true
+            docker run -d --name aiteam --restart unless-stopped \
               -p 5110:5110 \
-              -v /home/ec2-user/ws/ai-team-output:/root/ws/ai-team-output \
-              --env-file /home/ec2-user/.ai-team/env \
-              ai-team
+              -v /home/ec2-user/ws/aiteamoutput:/root/ws/aiteamoutput \
+              --env-file /home/ec2-user/.aiteam/env \
+              aiteam

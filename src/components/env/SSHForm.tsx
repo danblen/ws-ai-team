@@ -100,7 +100,7 @@ export default function SSHForm({ config, onChange }: Props) {
         <label className="env-label">远程工作目录</label>
         <input
           className="env-input"
-          placeholder="~/ai-team-workspace"
+          placeholder="~/aiteam-workspace"
           value={config.remoteWorkDir}
           onChange={(e) => onChange({ remoteWorkDir: e.target.value })}
         />

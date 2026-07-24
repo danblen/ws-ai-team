@@ -15,9 +15,9 @@ const appRequire = createRequire(path.join(APP_ROOT, 'package.json'));
 // ---------- Config ----------
 
 // Must match the Vite `base` config in vite.config.ts so that URLs Vite
-// generates (e.g. /ai-team/preview/<sid>/@vite/client) match what the
+// generates (e.g. /aiteam/preview/<sid>/@vite/client) match what the
 // browser resolves through nginx's path rewriting.
-const APP_BASE_PATH = (process.env.APP_BASE_PATH || '/ai-team').replace(/\/+$/, '');
+const APP_BASE_PATH = (process.env.APP_BASE_PATH || '/aiteam').replace(/\/+$/, '');
 const STALE_MS = 30 * 60 * 1000;        // 30 min idle → auto-cleanup
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // check every 5 min
 

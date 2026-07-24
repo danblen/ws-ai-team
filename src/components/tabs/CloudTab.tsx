@@ -10,7 +10,7 @@ interface Provider {
 }
 
 const PROVIDERS: Provider[] = [
-  { id: 'ai-team', name: 'AI Team Cloud', icon: '☁', desc: '托管静态应用与函数，零配置部署' },
+  { id: 'aiteam', name: 'AI Team Cloud', icon: '☁', desc: '托管静态应用与函数，零配置部署' },
   { id: 'vercel', name: 'Vercel', icon: '▲', desc: '前端应用与边缘函数部署平台' },
   { id: 'github', name: 'GitHub', icon: '🐙', desc: '同步代码仓库、创建 Pages' },
   { id: 'supabase', name: 'Supabase', icon: '⚡', desc: '数据库、认证与存储后端' },

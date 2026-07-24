@@ -42,7 +42,7 @@ export default function ProjectPicker() {
 
 // 云端模式下隐藏工作树的绝对路径前缀（含用户家目录与邮箱），仅以 workspace 展示相对部分。
 function maskRemoteWorkDir(workDir: string): string {
-  const m = workDir.match(/\/ai-team-output\/[^/]+\/(.*)$/);
+  const m = workDir.match(/\/aiteamoutput\/[^/]+\/(.*)$/);
   return m ? `workspace/${m[1]}` : workDir;
 }
 

@@ -58,7 +58,7 @@ export function getApiPrefix(): string {
   return _apiPrefix;
 }
 
-// 应用部署的基路径（vite `base`，如 /ai-team）。生产环境后端挂在该子路径下，
+// 应用部署的基路径（vite `base`，如 /aiteam）。生产环境后端挂在该子路径下，
 // 所有 /api、/preview 请求都必须带上它，否则会绕过反向代理导致 404。
 export const BASE_PREFIX = import.meta.env.BASE_URL.replace(/\/+$/, '');
 

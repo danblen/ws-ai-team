@@ -89,7 +89,7 @@ export default function PublishTab() {
     const blob = new Blob([manifest], { type: 'text/plain' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${app.current.title || 'ai-team-project'}.txt`;
+    a.download = `${app.current.title || 'aiteam-project'}.txt`;
     a.click();
     URL.revokeObjectURL(a.href);
   };

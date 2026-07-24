@@ -84,7 +84,7 @@ export interface EnvironmentConfig {
 export function defaultEnvConfig(): EnvironmentConfig {
   return {
     mode: 'remote',
-    local: { engine: 'builtin', cliId: 'claude', workDir: '/Volumes/z/work/ws-ai-team/project' },
+    local: { engine: 'builtin', cliId: 'claude', workDir: '/Volumes/z/work/ws-aiteam/project' },
     ssh: {
       host: '',
       port: 22,
@@ -93,7 +93,7 @@ export function defaultEnvConfig(): EnvironmentConfig {
       privateKeyPath: '',
       password: '',
       cliId: 'opencode',
-      remoteWorkDir: '~/ai-team-workspace',
+      remoteWorkDir: '~/aiteam-workspace',
     },
     remote: {
       url: typeof window !== 'undefined' ? window.location.origin : '',

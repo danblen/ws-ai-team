@@ -12,7 +12,7 @@ const REGISTRY_FILE = path.join(DATA_DIR, 'projects.json');
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
 // Git 提交统一使用的身份（避免宿主机未配置 user.name/email 导致提交失败）。
-const GIT_IDENTITY = ['-c', 'user.email=ai-team@local', '-c', 'user.name=AI Team'];
+const GIT_IDENTITY = ['-c', 'user.email=aiteam@local', '-c', 'user.name=AI Team'];
 
 /**
  * 将任意字符串规整为单层、安全的目录名，杜绝路径穿越与绝对路径。
@@ -95,11 +95,11 @@ function branchName(sid) {
 // ---------- 本地模式 Git 工作树（任意用户目录） ----------
 
 /**
- * 本地项目的会话 worktree 目录：放在项目仓库内的 .ai-team-worktrees/<sid>，
+ * 本地项目的会话 worktree 目录：放在项目仓库内的 .aiteam-worktrees/<sid>，
  * 并写入 .git/info/exclude 避免在主工作树中显示为未跟踪文件。
  */
 function localWorktreeDir(repoDir, sid) {
-  return path.join(repoDir, '.ai-team-worktrees', safeId(sid));
+  return path.join(repoDir, '.aiteam-worktrees', safeId(sid));
 }
 
 /**
@@ -125,8 +125,8 @@ async function ensureGitRepo(dir) {
     fs.mkdirSync(path.dirname(abs), { recursive: true });
     let cur = '';
     try { cur = fs.readFileSync(abs, 'utf8'); } catch { /* 首次 */ }
-    if (!cur.split('\n').includes('.ai-team-worktrees/')) {
-      fs.appendFileSync(abs, `${cur.endsWith('\n') || cur === '' ? '' : '\n'}.ai-team-worktrees/\n`);
+    if (!cur.split('\n').includes('.aiteam-worktrees/')) {
+      fs.appendFileSync(abs, `${cur.endsWith('\n') || cur === '' ? '' : '\n'}.aiteam-worktrees/\n`);
     }
   } catch { /* 忽略 exclude 写入失败 */ }
 

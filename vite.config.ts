@@ -15,7 +15,7 @@ export default defineConfig({
   // it only slows dev and trips the "deoptimised styling" note. React itself
   // stays external; only the transform is skipped.
   plugins: [react({ exclude: /\/src\/vendor\// })],
-  base: '/ai-team/',
+  base: '/aiteam/',
   define: {
     __COMMIT_HASH__: JSON.stringify(GIT_COMMIT),
   },
@@ -37,23 +37,23 @@ export default defineConfig({
       ],
     },
     proxy: {
-      // 前端在 base=/ai-team 下请求 /ai-team/api、/ai-team/preview，
+      // 前端在 base=/aiteam 下请求 /aiteam/api、/aiteam/preview，
       // 开发时去掉前缀再转发到后端（后端路由挂在根下）。
-      '/ai-team/api': {
+      '/aiteam/api': {
         target: `http://localhost:${SERVER_PORT}`,
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/ai-team/, ''),
+        rewrite: (p) => p.replace(/^\/aiteam/, ''),
       },
-      '/ai-team/preview': {
+      '/aiteam/preview': {
         target: `http://localhost:${SERVER_PORT}`,
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/ai-team/, ''),
+        rewrite: (p) => p.replace(/^\/aiteam/, ''),
       },
       // 已发布站点公开访问路径，开发时同样转发到后端。
-      '/ai-team/p': {
+      '/aiteam/p': {
         target: `http://localhost:${SERVER_PORT}`,
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/ai-team/, ''),
+        rewrite: (p) => p.replace(/^\/aiteam/, ''),
       },
     },
   },
