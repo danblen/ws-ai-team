@@ -45,7 +45,7 @@ export default function PreviewTab() {
             disabled={building || (!canBuild && !url)}
             onClick={previewOrRefresh}
           >
-            {building ? '构建中…' : '⟳ 预览'}
+            {building ? '构建中…' : '刷新'}
           </button>
           <button className="icon-btn" title="在浏览器打开" disabled={!url} onClick={openInBrowser}>
             ↗
