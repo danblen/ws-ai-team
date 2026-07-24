@@ -19,6 +19,46 @@ function log(...args) {
 }
 
 /**
+ * Shared OpenCode config — generated once at first need, copied into each sandbox HOME.
+ */
+const SHARED_OPENCODE_CONFIG = '/tmp/aiteam-opencode.jsonc';
+
+function ensureSharedOpenCodeConfig() {
+  if (fs.existsSync(SHARED_OPENCODE_CONFIG)) return;
+  const apiKey = process.env.OPENAI_API_KEY;
+  const baseURL = process.env.OPENAI_BASE_URL;
+  const model = process.env.OPENAI_MODEL;
+  if (!apiKey || !baseURL || !model) return;
+
+  const providerName = 'opencode-deepseek';
+  const config = {
+    $schema: 'https://opencode.ai/config.json',
+    model: `${providerName}/${model}`,
+    provider: {
+      [providerName]: {
+        name: 'OpenCode DeepSeek',
+        options: { apiKey, baseURL: baseURL.replace(/\/+$/, '') },
+        models: { [model]: { id: model, name: 'DeepSeek Flash V4' } },
+      },
+    },
+  };
+  fs.writeFileSync(SHARED_OPENCODE_CONFIG, JSON.stringify(config, null, 2), 'utf8');
+  log(`generated shared OpenCode config`);
+}
+
+/**
+ * Write OpenCode config into the sandbox home directory.
+ * OpenCode reads ~/.config/opencode/opencode.jsonc, not OPENAI_* env vars directly.
+ */
+function writeOpenCodeConfig(sandboxHome) {
+  ensureSharedOpenCodeConfig();
+  if (!fs.existsSync(SHARED_OPENCODE_CONFIG)) return;
+  const dir = path.join(sandboxHome, '.config', 'opencode');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.copyFileSync(SHARED_OPENCODE_CONFIG, path.join(dir, 'opencode.jsonc'));
+}
+
+/**
  * Create a Linux system user for sandbox isolation.
  * @param {number} uid
  */
@@ -206,6 +246,8 @@ export function spawnAsUser(binPath, args, opts, uid) {
     const sandboxHome = `/tmp/sandbox-${uid}`;
     try {
       fs.mkdirSync(`${sandboxHome}/.local/share`, { recursive: true });
+      // 为 OpenCode 创建配置文件（OpenCode 不读 OPENAI_MODEL 等 env，用配置文件）
+      writeOpenCodeConfig(sandboxHome);
       execSync(`chown -R ${uid}:${uid} "${sandboxHome}"`, { stdio: 'ignore', timeout: 5000 });
     } catch {}
     return spawn(binPath, args, {
