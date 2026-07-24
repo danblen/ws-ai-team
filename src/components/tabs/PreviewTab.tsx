@@ -20,15 +20,11 @@ export default function PreviewTab() {
     if (url) window.open(url, '_blank');
   };
 
-  // 合并「预览 / 刷新」：有代码则用当前代码重新构建预览（无需等待对话完成），
-  // 否则仅刷新已有预览；构建完成后强制刷新 iframe（即使 URL 未变化）。
+  // 总是尝试重新构建/启动预览；previewNow() 内部会处理所有边界情况。
   const previewOrRefresh = async () => {
-    if (canBuild) {
-      await app.previewNow();
-      setReloadKey((k) => k + 1);
-    } else if (url) {
-      setReloadKey((k) => k + 1);
-    }
+    if (building) return;
+    await app.previewNow();
+    setReloadKey((k) => k + 1);
   };
 
   return (
