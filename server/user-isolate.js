@@ -202,15 +202,15 @@ export function removeIsolatedUser(sid) {
  */
 export function spawnAsUser(binPath, args, opts, uid) {
   if (IS_LINUX && uid !== null) {
+    // 每个沙箱用户使用独立的 HOME 目录，避免多用户竞争同一个 /tmp
+    const sandboxHome = `/tmp/sandbox-${uid}`;
+    try { fs.mkdirSync(`${sandboxHome}/.local/share`, { recursive: true }); } catch {}
     return spawn(binPath, args, {
       ...opts,
       uid,
       gid: uid,
       // Clean environment: don't leak secrets as the sandbox user
       // 但透传 AI 模型相关的环境变量，确保 CLI 能拿到 API Key 和模型配置
-      // 每个沙箱用户使用独立的 HOME 目录，避免多用户竞争同一个 /tmp
-      const sandboxHome = `/tmp/sandbox-${uid}`;
-      try { fs.mkdirSync(`${sandboxHome}/.local/share`, { recursive: true }); } catch {}
       env: {
         HOME: sandboxHome,
         PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin',
