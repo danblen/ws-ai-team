@@ -195,6 +195,40 @@ export function mountProjects(app) {
     }
   });
 
+  // 删除项目：移除项目目录、worktree 目录并从注册表中清除。
+  app.delete('/api/projects/:id', async (req, res) => {
+    const owner = ownerKey(req);
+    const id = safeId(req.params.id);
+    if (!id) return res.status(400).json({ error: '缺少 id' });
+
+    const reg = readRegistry();
+    const list = reg[owner] || [];
+    const idx = list.findIndex((p) => p.id === id);
+    if (idx < 0) return res.status(404).json({ error: '项目不存在' });
+
+    const dir = projectDir(owner, id);
+    const wtsDir = path.join(WORKSPACES_DIR, owner, '.worktrees', id);
+
+    try {
+      // 删除项目主目录。
+      if (fs.existsSync(dir)) {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+      // 删除关联的 worktree 目录。
+      if (fs.existsSync(wtsDir)) {
+        fs.rmSync(wtsDir, { recursive: true, force: true });
+      }
+    } catch (err) {
+      console.error('[projects] 删除目录失败:', err?.message || err);
+      // 目录删除失败仍继续清理注册表，避免注册表残留孤立条目。
+    }
+
+    list.splice(idx, 1);
+    reg[owner] = list;
+    writeRegistry(reg);
+    res.json({ ok: true });
+  });
+
   app.post('/api/projects/:id/checkout', async (req, res) => {
     const owner = ownerKey(req);
     const id = safeId(req.params.id);

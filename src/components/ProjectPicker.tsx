@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useApp } from '../store/AppProvider';
 import DirBrowserModal from './DirBrowserModal';
-import { listProjects, createProject } from '../lib/api';
+import { listProjects, createProject, deleteProject } from '../lib/api';
 import type { RemoteProject } from '../lib/api';
 
 // 「在服务器上选择工作目录」入口的授权邮箱。该功能可直接改动服务器上的
@@ -194,6 +194,7 @@ function RemotePicker() {
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [dirOpen, setDirOpen] = useState(false);
   const [dirName, setDirName] = useState('');
 
@@ -247,6 +248,24 @@ function RemotePicker() {
       setBusy(false);
     }
   }, [app, name, s.id]);
+
+  const handleDelete = useCallback(
+    async (e: React.MouseEvent, id: string) => {
+      e.stopPropagation();
+      if (!window.confirm('确定要删除该项目吗？项目目录及所有数据将被永久删除，不可恢复。')) return;
+      setDeletingId(id);
+      setError(null);
+      try {
+        await deleteProject(id);
+        setProjects((prev) => prev.filter((p) => p.id !== id));
+      } catch (err) {
+        setError((err as Error).message || '删除项目失败');
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [],
+  );
 
   // 选择服务器上的一个目录作为工作目录（复用本地模式的绑定逻辑：
   // 记入项目、载入文件，Git 工作树在首次发送时切出，也可改为直接开发）。
@@ -311,12 +330,19 @@ function RemotePicker() {
             <button
               key={p.id}
               className="project-item"
-              disabled={busy}
+              disabled={busy || deletingId === p.id}
               onClick={() => bind(p)}
             >
               <span className="project-item-ico">📦</span>
               <span className="project-item-name">{p.name}</span>
               <span className="project-item-meta">继续开发 →</span>
+              <span
+                className="project-item-del"
+                title="删除项目"
+                onClick={(e) => handleDelete(e, p.id)}
+              >
+                {deletingId === p.id ? '…' : '×'}
+              </span>
             </button>
           ))
         )}
@@ -386,6 +412,15 @@ function LocalPicker() {
     [app, s.id],
   );
 
+  const handleDelete = useCallback(
+    (e: React.MouseEvent, id: string) => {
+      e.stopPropagation();
+      if (!window.confirm('确定要从历史项目中移除吗？（仅清除记录，不会删除磁盘上的项目文件）')) return;
+      app.removeLocalProject(id);
+    },
+    [app],
+  );
+
   const disabled = app.running || busy;
 
   return (
@@ -421,6 +456,13 @@ function LocalPicker() {
               <span className="project-item-ico">📦</span>
               <span className="project-item-name">{p.name}</span>
               <span className="project-item-meta" title={p.workDir}>{p.workDir}</span>
+              <span
+                className="project-item-del"
+                title="从历史中移除"
+                onClick={(e) => handleDelete(e, p.id)}
+              >
+                ×
+              </span>
             </button>
           ))}
         </div>

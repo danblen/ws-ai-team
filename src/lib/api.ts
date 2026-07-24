@@ -313,6 +313,16 @@ export async function createProject(name: string): Promise<RemoteProject> {
   return data.project as RemoteProject;
 }
 
+/** 删除项目（后端移除项目目录并从注册表清除）。 */
+export async function deleteProject(id: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/projects/${encodeURIComponent(id)}`), {
+    method: 'DELETE',
+    headers: apiHeaders(),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `删除项目失败 (${res.status})`);
+}
+
 /** 为会话创建（或复用）该项目的 worktree 分支，返回其绝对工作目录。 */
 export async function checkoutProject(
   id: string,
