@@ -83,9 +83,9 @@ function projectDir(owner, id) {
   return path.join(WORKSPACES_DIR, owner, id);
 }
 
-/** 会话 worktree 目录：WORKSPACES_DIR/<owner>/.worktrees/<projectId>/<sid>。 */
+/** 会话 worktree 目录：放在项目仓库内的 .aiteam-worktrees/<sid>。 */
 function worktreeDir(owner, id, sid) {
-  return path.join(WORKSPACES_DIR, owner, '.worktrees', id, sid);
+  return path.join(projectDir(owner, id), '.aiteam-worktrees', safeId(sid));
 }
 
 function branchName(sid) {
@@ -181,6 +181,14 @@ export function mountProjects(app) {
       // 沙箱用户（sandbox-10000~10199）需要能读写 .git
       await git(dir, ['config', 'core.sharedRepository', 'true']);
       execSync(`chmod -R a+wX "${path.join(dir, '.git')}"`, { timeout: 10000 });
+      // 将 worktree 目录加入 .git/info/exclude，避免在主工作树中显示为未跟踪文件。
+      const gitDir = await git(dir, ['rev-parse', '--git-dir']);
+      const excludeFile = path.resolve(dir, gitDir, 'info', 'exclude');
+      let excludeContent = '';
+      try { excludeContent = fs.readFileSync(excludeFile, 'utf8'); } catch { /* 首次 */ }
+      if (!excludeContent.split('\n').includes('.aiteam-worktrees/')) {
+        fs.appendFileSync(excludeFile, `${excludeContent.endsWith('\n') || excludeContent === '' ? '' : '\n'}.aiteam-worktrees/\n`);
+      }
       // 初始空提交，保证有基提交可开分支。
       await git(dir, [...GIT_IDENTITY, 'commit', '--allow-empty', '-m', 'init']);
 
