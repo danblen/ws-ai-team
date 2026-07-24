@@ -69,6 +69,6 @@ jobs:
             docker rm aiteam || true
             docker run -d --name aiteam --restart unless-stopped \
               -p 5110:5110 \
-              -v /home/ec2-user/ws/aiteamoutput:/root/ws/aiteamoutput \
+              -v /home/ec2-user/ws/aiteamoutput:/aiteamoutput \
               --env-file /home/ec2-user/.aiteam/env \
               aiteam

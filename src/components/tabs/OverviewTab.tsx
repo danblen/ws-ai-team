@@ -68,7 +68,7 @@ export default function OverviewTab() {
         </div>
 
         <div className="ov-grid">
-          <ProjectPicker />
+          {s.messages.length === 0 && <ProjectPicker />}
           <section className="ov-card">
             <h3>产品描述</h3>
             {s.summary ? (

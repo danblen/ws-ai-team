@@ -84,7 +84,7 @@ export interface EnvironmentConfig {
 export function defaultEnvConfig(): EnvironmentConfig {
   return {
     mode: 'remote',
-    local: { engine: 'builtin', cliId: 'claude', workDir: '/Volumes/z/work/ws-aiteam/project' },
+    local: { engine: 'builtin', cliId: 'claude', workDir: '' },
     ssh: {
       host: '',
       port: 22,

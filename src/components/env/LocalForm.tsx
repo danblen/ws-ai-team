@@ -62,15 +62,6 @@ export default function LocalForm({ config, agents, loading, onChange }: Props) 
               </select>
             )}
           </div>
-          <div className="env-field">
-            <label className="env-label">工作目录（可选）</label>
-            <input
-              className="env-input"
-              placeholder="/Volumes/z/work/ws-aiteam/project (默认)"
-              value={config.workDir || ''}
-              onChange={(e) => onChange({ workDir: e.target.value })}
-            />
-          </div>
         </>
       )}
     </div>

@@ -20,7 +20,7 @@ const KNOWN_CLIS = [
  * 必须位于应用仓库之外：否则 CLI（如 OpenCode）向上探测项目根时会读到
  * aiteam 自身源码。放到本应用的同级目录 aiteamoutput 下。
  */
-export const WORKSPACES_DIR = path.join(os.homedir(), 'ws', 'aiteamoutput');
+export const WORKSPACES_DIR = path.resolve(__dirname, '..', '..', 'aiteamoutput');
 fs.mkdirSync(WORKSPACES_DIR, { recursive: true });
 
 /**
@@ -35,18 +35,15 @@ function sanitizeName(name) {
  * 解析出「本次任务实际工作的项目目录」：
  *   <配置的工作根目录>/<项目名>
  *   或（未配置工作根目录时）
- *   ~/ws/aiteamoutput/<邮箱>/<项目名>
+ *   ../aiteamoutput/<项目名>
  * - base 用 path.resolve 处理，确保绝对路径不会被当作相对路径拼接；
- * - 未配置根目录时回退到仓库外的 WORKSPACES_DIR（~/ws/aiteamoutput）；
+ * - 未配置根目录时回退到仓库外的 WORKSPACES_DIR（../aiteamoutput）；
  * - 未提供项目名时用 sid 兜底；
  * - direct===true 且有 reqWorkDir 时，直接以该目录为项目根（不拼项目名）。
  */
 function resolveProjectDir(reqWorkDir, projectName, sid, email, direct) {
   if (direct && reqWorkDir) return path.resolve(reqWorkDir);
   let base = reqWorkDir ? path.resolve(reqWorkDir) : WORKSPACES_DIR;
-  if (!reqWorkDir && email) {
-    base = path.join(WORKSPACES_DIR, sanitizeName(email));
-  }
   const name = sanitizeName(projectName) || sid;
   return path.join(base, name);
 }
