@@ -78,6 +78,6 @@ jobs:
                 -m 1.4g --memory-swap 1.7g --cpus 1.5 \
                 -v /home/ec2-user/ws/aiteam:/app \
                 -v /home/ec2-user/ws/aiteamoutput:/aiteamoutput \
-                --env-file /home/ec2-user/.aiteam/env \
+                --env-file /home/ec2-user/ws/aiteam/.env \
                 aiteam
             fi
