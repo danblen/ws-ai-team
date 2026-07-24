@@ -86,14 +86,6 @@ export default function PromptInput({
         />
         {streaming ? (
           <div className="composer-actions">
-            <button
-              className="btn send"
-              onClick={send}
-              disabled={!value.trim()}
-              title="加入队列"
-            >
-              <span className="queue-plus">＋</span>
-            </button>
             <button className="btn stop" onClick={onStop} title="停止生成">
               <span className="stop-icon" /> 停止
             </button>
