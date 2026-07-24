@@ -113,6 +113,8 @@ interface AppState {
   mergeSessionProject: (id: string) => Promise<void>;
   /** 本地模式：已记录的历史项目（按名称）。 */
   localProjects: LocalProject[];
+  /** 本地模式：从历史项目列表中移除一个项目（仅清除记录，不删除磁盘文件）。 */
+  removeLocalProject: (id: string) => void;
   /** 本地模式：为会话绑定一个本地项目（名称 + 仓库目录），创建 Git worktree 并记入注册表。 */
   bindLocalProject: (id: string, name: string, repoDir: string) => Promise<void>;
   /** 本地模式：设置开发方式（新建工作树 / 直接在当前分支）。仅在切出工作树前可切换。 */
@@ -508,6 +510,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     },
     [appendLog, patchCurrent],
+  );
+
+  // 本地模式：从历史项目列表中移除一个项目（仅清除 localStorage 记录，不删除磁盘文件）。
+  const removeLocalProject = useCallback(
+    (id: string) => {
+      setLocalProjects((prev) => prev.filter((p) => p.id !== id));
+    },
+    [],
   );
 
   // 本地模式：切换开发方式（仅在尚未切出工作树时允许）。
@@ -1168,6 +1178,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     bindSessionProject,
     mergeSessionProject,
     localProjects,
+    removeLocalProject,
     bindLocalProject,
     setLocalDevMode,
     mergeLocalSession,
