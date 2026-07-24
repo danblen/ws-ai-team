@@ -13,6 +13,7 @@ on:
         options:
           - pages
           - aws
+          - aliyun
           - both
 
 permissions:
@@ -78,6 +79,38 @@ jobs:
                 -m 1.4g --memory-swap 1.7g --cpus 1.5 \
                 -v $HOME/ws/aiteam:/app \
                 -v $HOME/ws/aiteamoutput:/aiteamoutput \
+                --env-file $HOME/ws/aiteam/.env \
+                aiteam
+            fi
+
+  deploy-aliyun:
+    if: github.event_name == 'push' || inputs.target == 'aliyun' || inputs.target == 'both'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Aliyun via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: 106.14.225.158
+          username: root
+          key: ${{ secrets.ALIYUN_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            cd $HOME/ws/aiteam
+            git pull --no-rebase origin main
+
+            # Build frontend inside the runtime container
+            docker run --rm -e NODE_ENV=development -v "$(pwd):/app":Z -w /app aiteam sh -c "npm install && npm run build"
+
+            # Start container with code mounted, or restart if already running
+            if docker inspect aiteam >/dev/null 2>&1; then
+              docker restart aiteam
+            else
+              docker run -d --name aiteam --restart unless-stopped \
+                -p 5110:5110 \
+                -m 1.4g \
+                -v $HOME/ws/aiteam:/app:Z \
+                -v $HOME/ws/aiteamoutput:/aiteamoutput:Z \
                 --env-file $HOME/ws/aiteam/.env \
                 aiteam
             fi
