@@ -194,6 +194,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const liveContentRefs = useRef<Record<string, string>>({});
   const codeAgentRefs = useRef<Record<string, boolean>>({});
   const currentIdRef = useRef<string>('');
+  const previewNowRef = useRef<() => Promise<void>>(async () => {});
 
   const current = useMemo(
     () => sessions.find((s) => s.id === currentId) || sessions[0],
@@ -472,7 +473,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           appendLog(id, 'ok', `✔ 已载入项目中的 ${files.length} 个文件`);
           // 载入后自动构建预览，让概览页的预览区可直接查看。
           if (id === currentIdRef.current) {
-            setTimeout(() => previewNow(), 100);
+            setTimeout(() => previewNowRef.current(), 100);
           }
         } else {
           // 目录为空：显式清空，避免从有内容目录切换过来时残留旧文件，
@@ -484,7 +485,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         appendLog(id, 'error', (err as Error).message || '读取项目文件失败');
       }
     },
-    [appendLog, patchCurrent, previewNow],
+    [appendLog, patchCurrent],
   );
 
   // 本地模式：切换开发方式（仅在尚未切出工作树时允许）。
@@ -590,6 +591,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     await runPreviewBuild(sid, files, session.framework);
   }, [sessions, runs, runPreviewBuild, appendLog, envConfig]);
+  previewNowRef.current = previewNow;
 
   const send = useCallback(
     (text: string, mode: RunMode = 'iterate', forcedWorkDir?: string) => {
