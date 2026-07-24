@@ -63,7 +63,7 @@ jobs:
           port: 22
           script: |
             set -e
-            cd /home/ec2-user/ws/aiteam
+            cd $HOME/ws/aiteam
             git pull --no-rebase origin main
 
             # Build frontend inside the runtime container (no image rebuild needed)
@@ -76,8 +76,8 @@ jobs:
               docker run -d --name aiteam --restart unless-stopped \
                 -p 5110:5110 \
                 -m 1.4g --memory-swap 1.7g --cpus 1.5 \
-                -v /home/ec2-user/ws/aiteam:/app \
-                -v /home/ec2-user/ws/aiteamoutput:/aiteamoutput \
-                --env-file /home/ec2-user/ws/aiteam/.env \
+                -v $HOME/ws/aiteam:/app \
+                -v $HOME/ws/aiteamoutput:/aiteamoutput \
+                --env-file $HOME/ws/aiteam/.env \
                 aiteam
             fi
