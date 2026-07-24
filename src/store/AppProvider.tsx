@@ -373,6 +373,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const bindSessionProject = useCallback(
     async (id: string, project: RemoteProject, isNew?: boolean) => {
+      // 新建项目：直接使用项目主目录，不创建 worktree。
+      // 新项目只有一个空的 init commit，没有需要隔离的工作树。
+      if (isNew) {
+        patchCurrent(id, (s) => ({
+          ...s,
+          projectId: project.id,
+          projectName: project.name,
+          workDir: project.workDir,
+          projectLocked: true,
+          newProject: true,
+          localDevMode: 'direct',
+          merged: false,
+          updatedAt: Date.now(),
+        }));
+        appendLog(id, 'ok', `✔ 已绑定项目「${project.name}」`);
+        return;
+      }
+
       appendLog(id, 'info', `正在为项目「${project.name}」创建工作树…`);
       try {
         const { workDir, branch } = await checkoutProject(project.id, id);
